@@ -108,8 +108,6 @@ building_names = [
     "Mercenary Outpost"
 ]
 
-
-
 unit_names = [
     "Peasant",
     "Burning man",
@@ -218,6 +216,7 @@ resource_names = [
 
 building_health_base = 0x1ba21c
 building_cost_base = 0x1c21e4
+building_population_base = 0x1ba43c
 
 unit_health_base = 0x74eaf4
 unit_arrow_dmg_base = 0x74ec34
