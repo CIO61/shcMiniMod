@@ -214,8 +214,8 @@ resource_names = [
     "Armor"
 ]
 
-building_health_base = 0x1ba21c
 building_cost_base = 0x1c21e4
+building_health_base = 0x1ba21c
 building_population_base = 0x1ba43c
 
 unit_health_base = 0x74eaf4

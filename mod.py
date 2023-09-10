@@ -1,6 +1,7 @@
 import copy
 import json
 import os
+from functools import partial
 
 from assets.data import building_names, building_cost_base, building_health_base, building_population_base
 from assets.data import unit_names, unit_health_base, unit_arrow_dmg_base, unit_stone_dmg_base, unit_xbow_dmg_base, \
@@ -117,6 +118,7 @@ def install():
                 for key, change in config[cfg].items():
                     if not ("special" in uninstall):
                         uninstall["special"] = {}
+
                     if key == "tax_reset":
                         uninstall["special"]["tax_reset"] = copy.deepcopy(change)
                         reset_value = change["value"]
@@ -125,26 +127,16 @@ def install():
                         uninstall["special"]["custom_taxation"] = copy.deepcopy(change)
                         tax_table = change["table"]
                         enable_custom_taxation(tax_table)
+                    elif key == "assassin_rally_speed":
+                        uninstall["special"]["assassin_rally_speed"] = copy.deepcopy(change)
+                        speed = change["value"] & 0xF
+                        assassin_rally_aob = [0x66, 0xBA, speed, 0x00, 0x90, 0x90, 0x90]
+                        apply_aob_as_patch(0x174A60, assassin_rally_aob)
 
             elif cfg == "other":
                 subconfig = config[cfg]
 
                 for change in subconfig:
-                    if change["description"] == "assassin_rally_speed":
-                        if not("other" in uninstall):
-                            uninstall["other"] = {}
-
-                        if change["description"] == "assassin_rally_speed":
-                            uninstall["other"]["assassin_rally_speed"] = copy.deepcopy(change)
-                            speed = change["value"]
-                            speed = speed & 0xF
-                            assassin_rally_aob = [0x66, 0xBA, speed, 0x00, 0x90, 0x90, 0x90]
-                            shc.seek(0)
-                            shc.seek(0x174A60)
-                            for elem in assassin_rally_aob:
-                                shc.write(elem.to_bytes(1, byteorder='little'))
-                            continue
-
                     address = int(change["address"], 16)
                     size = change["size"]
 
@@ -169,7 +161,7 @@ def install():
     # print([hex(int(x)) for x in uninstall])
 
 
-def uninstall():
+def uninstall_mod():
     if os.path.isfile("uninstall.json"):
         with open("uninstall.json", "r") as f:
             try:
@@ -196,53 +188,24 @@ def uninstall():
                         break
 
 
-def get_building_cost_address(building_name):
-    index = building_names.index(building_name)
+def get_address(name_list: list, base_address, size, name):
+    index = name_list.index(name)
     if index == -1:
-        raise Exception("Invalid building name")
-    return building_cost_base + index * 20
+        raise Exception(f"Invalid name: {name}")
+    return base_address + index * size
 
 
-def get_building_health_address(building_name):
-    index = building_names.index(building_name)
-    if index == -1:
-        raise Exception("Invalid building name")
-    return building_health_base + index * 4
+get_building_cost_address = partial(get_address, building_names, building_cost_base, 20)
+get_building_health_address = partial(get_address, building_names, building_health_base, 4)
+get_building_population_address = partial(get_address, building_names, building_population_base, 4)
 
+get_unit_health_address = partial(get_address, unit_names, unit_health_base,4)
+get_unit_arrow_dmg_address = partial(get_address, unit_names, unit_arrow_dmg_base,4)
+get_unit_xbow_dmg_address = partial(get_address, unit_names, unit_xbow_dmg_base,4)
+get_unit_stone_dmg_address = partial(get_address, unit_names, unit_stone_dmg_base,4)
 
-def get_building_population_address(building_name):
-    index = building_names.index(building_name)
-    if index == -1:
-        raise Exception("Invalid building name")
-    return building_population_base + index * 4
-
-
-def get_unit_health_address(unit_name):
-    index = unit_names.index(unit_name)
-    if index == -1:
-        raise Exception("Invalid unit name")
-    return unit_health_base + index * 4
-
-
-def get_unit_arrow_dmg_address(unit_name):
-    index = unit_names.index(unit_name)
-    if index == -1:
-        raise Exception("Invalid unit name")
-    return unit_arrow_dmg_base + index * 4
-
-
-def get_unit_xbow_dmg_address(unit_name):
-    index = unit_names.index(unit_name)
-    if index == -1:
-        raise Exception("Invalid unit name")
-    return unit_xbow_dmg_base + index * 4
-
-
-def get_unit_stone_dmg_address(unit_name):
-    index = unit_names.index(unit_name)
-    if index == -1:
-        raise Exception("Invalid unit name")
-    return unit_stone_dmg_base + index * 4
+get_resource_buy_address = partial(get_address, resource_names, resource_buy_base, 4)
+get_resource_sell_address = partial(get_address, resource_names, resource_sell_base, 4)
 
 
 def get_unit_melee_dmg_address(attacker_name, defender_name):
@@ -253,20 +216,6 @@ def get_unit_melee_dmg_address(attacker_name, defender_name):
     if defender_index == -1:
         raise Exception("Invalid unit name")
     return unit_melee_dmg_base + defender_index * 4 + attacker_index * 16 + attacker_index * (len(unit_names) - 1) * 4
-
-
-def get_resource_buy_address(resource_name):
-    index = resource_names.index(resource_name)
-    if index == -1:
-        raise Exception("Invalid resource name")
-    return resource_buy_base + index * 4
-
-
-def get_resource_sell_address(resource_name):
-    index = resource_names.index(resource_name)
-    if index == -1:
-        raise Exception("Invalid resource name")
-    return resource_sell_base + index * 4
 
 
 def read(shc, address, size):
@@ -415,7 +364,7 @@ def enable_custom_taxation(tax_table):
         0xE9, 0xDF, 0xB2, 0xFA, 0xFF,  # jmp Stronghold_Crusader_Extreme.exe+459B
         0x90,  # nop
         0x90,  # nop
-        0xC1, 0xF8, 0x02,  # sar eax,02 { 2 }
+        0xC1, 0xF8, 0x03,  # sar eax,02 { 2 }
         0x83, 0x3D, 0xF0, 0x4D, 0x35, 0x02, 0x00  # cmp dword ptr [Stronghold_Crusader_Extreme.exe+1F54DF0],00
     ]
     apply_aob_as_patch(0x592B7, tax_jumpout_instructions)
@@ -432,7 +381,7 @@ def enable_custom_taxation(tax_table):
         0xE9, 0x32, 0xB2, 0xFA, 0xFF,  # jmp Stronghold_Crusader_Extreme.exe+45AB
         0x90,  # nop
         0x90,  # nop
-        0xC1, 0xF8, 0x01  # sar eax,01
+        0xC1, 0xF8, 0x02  # sar eax,01
     ]
     apply_aob_as_patch(0x59370, bribe_jumpout_instructions)
 
@@ -443,7 +392,7 @@ def enable_custom_taxation(tax_table):
     ]
     apply_aob_as_patch(0x45AB, custom_bribe_instructions)
 
-    apply_aob_as_patch(0x45BB, tax_table)
+    apply_aob_as_patch(0x45BB, [int(float(a)*20) for a in tax_table])
 
 
 def uninstall_custom_taxation():
@@ -464,6 +413,6 @@ if __name__ == "__main__":
         config = json.load(f)
 
     if len(sys.argv) > 1 and sys.argv[1] == "uninstall":
-        uninstall()
+        uninstall_mod()
     else:
         install()
