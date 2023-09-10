@@ -430,7 +430,7 @@
               "minItems": 11,
               "items": {
                 "type": "string",
-                "pattern": "\\d*?\\.[05]"
+                "pattern": "\\d*?\\.\\d[05]"
               }
              }
           }
