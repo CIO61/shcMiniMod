@@ -3,10 +3,10 @@ import json
 import os
 from functools import partial
 
-from assets.data import building_names, building_cost_base, building_health_base, building_population_base
-from assets.data import unit_names, unit_health_base, unit_arrow_dmg_base, unit_stone_dmg_base, unit_xbow_dmg_base, \
-    unit_melee_dmg_base
-from assets.data import resource_names, resource_buy_base, resource_sell_base
+from assets import (building_names, building_cost_base, building_health_base, building_population_base,
+                    scenario_pgr_base, scenario_pgr_crowded_base, skirmish_pgr_base, popularity_thresholds,
+                    unit_names, unit_health_base, unit_arrow_dmg_base, unit_stone_dmg_base, unit_xbow_dmg_base,
+                    unit_melee_dmg_base, resource_names, resource_buy_base, resource_sell_base)
 
 
 def install():
@@ -207,6 +207,10 @@ get_unit_stone_dmg_address = partial(get_address, unit_names, unit_stone_dmg_bas
 get_resource_buy_address = partial(get_address, resource_names, resource_buy_base, 4)
 get_resource_sell_address = partial(get_address, resource_names, resource_sell_base, 4)
 
+get_scenario_pgr_address = partial(get_address, popularity_thresholds, scenario_pgr_base, 4)
+get_scenario_pgr_crowded_address = partial(get_address, popularity_thresholds, scenario_pgr_crowded_base, 4)
+get_skirmish_pgr_address = partial(get_address, popularity_thresholds, skirmish_pgr_base, 4)
+
 
 def get_unit_melee_dmg_address(attacker_name, defender_name):
     attacker_index = unit_names.index(attacker_name)
@@ -392,7 +396,7 @@ def enable_custom_taxation(tax_table):
     ]
     apply_aob_as_patch(0x45AB, custom_bribe_instructions)
 
-    apply_aob_as_patch(0x45BB, [int(float(a)*20) for a in tax_table])
+    apply_aob_as_patch(0x45BB, [int(float(a)*20) for a in tax_table if a != "0.00"])
 
 
 def uninstall_custom_taxation():
