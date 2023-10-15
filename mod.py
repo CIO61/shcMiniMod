@@ -66,7 +66,7 @@ def write(shc, address, value, size):
 
 
 def apply_aob_as_patch(address, array):
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(address)
         for elem in array:
@@ -75,7 +75,7 @@ def apply_aob_as_patch(address, array):
 
 def install_tax_reset_feature(reset_value):
     original_section_count = None
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x11E", 16))
         original_section_count = int.from_bytes(shc.read(1), byteorder='little')
@@ -88,17 +88,17 @@ def install_tax_reset_feature(reset_value):
     SIZE = 0x8000
 
     # Increase image size to accommodate for extra code
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x168", 16))
         shc.write((0x2B90000).to_bytes(4, byteorder='little'))
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x2B9", 16))
         shc.write((0x70).to_bytes(1, byteorder='little'))
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x2C1", 16))
         shc.write((0x70).to_bytes(1, byteorder='little'))
@@ -117,7 +117,7 @@ def install_tax_reset_feature(reset_value):
 
     position = 0x2F8F000 - 0x45bb2c
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x5BB27", 16))
         shc.write(int("0xE9", 16).to_bytes(1, byteorder='little'))
@@ -125,7 +125,7 @@ def install_tax_reset_feature(reset_value):
         shc.write((0x90).to_bytes(1, byteorder='little'))
         shc.write((0x90).to_bytes(1, byteorder='little'))
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x7BE025", 16))
         for i in range(0xB):
@@ -148,13 +148,13 @@ def install_tax_reset_feature(reset_value):
 
     position = 0x2F8F030 - 0x45C1B0
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x5C1AB", 16))
         shc.write(int("0xE9", 16).to_bytes(1, byteorder='little'))
         shc.write((position).to_bytes(4, byteorder='little'))
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x7BE050", 16))
         for i in range(0xFB0):
@@ -163,17 +163,17 @@ def install_tax_reset_feature(reset_value):
 
 def uninstall_tax_reset_feature():
     # Reset image size to original ucp section size
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x168", 16))
         shc.write((0x2F8E000).to_bytes(4, byteorder='little'))
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x2B9", 16))
         shc.write((0x50).to_bytes(1, byteorder='little'))
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
         shc.seek(0)
         shc.seek(int("0x2C1", 16))
         shc.write((0x50).to_bytes(1, byteorder='little'))
@@ -248,8 +248,6 @@ def install_mod():
                 uninstall = {}
     else:
         uninstall = {}
-
-    # print(uninstall)
 
     if "4" not in uninstall:
         uninstall["4"] = {}
@@ -409,10 +407,9 @@ def install_mod():
                             write(shc, address, item, size)
                             address += size
 
-    with open("uninstall.json", "w") as f:
-        json.dump(uninstall, f, indent=4)
-
-    # print([hex(int(x)) for x in uninstall])
+    if settings.create_uninst:
+        with open("uninstall.json", "w") as f:
+            json.dump(uninstall, f, indent=4)
 
 
 def uninstall_mod():
@@ -446,13 +443,16 @@ if __name__ == "__main__":
     argp = argparse.ArgumentParser()
     argp.add_argument("-gamepath", required=False,
                       help="Folder of SHC Extreme, defaults to parent directory")
+    argp.add_argument("-create_uninst", action="store_true", required=False,
+                      help="Create uninstall.json to be able to revert changes later.")
 
     settings = argp.parse_args()
     if settings.gamepath:
         gamedir = os.path.abspath(settings.gamepath)
     else:
         gamedir = os.path.abspath(os.path.join(".", ".."))
-    my_dir = os.path.dirname(__file__)
+
+    my_dir = os.path.dirname(os.path.abspath(sys.executable))
     uninst_path = os.path.join(my_dir, "uninstall.json")
     configpath = os.path.join(my_dir, "config.json")
 
