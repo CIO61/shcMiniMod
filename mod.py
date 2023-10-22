@@ -189,8 +189,7 @@ def uninstall_tax_reset_feature():
 def enable_custom_taxation(tax_table):
     tax_jumpout_instructions = [
         0xE9, 0xDF, 0xB2, 0xFA, 0xFF,  # jmp Stronghold_Crusader_Extreme.exe+459B
-        0x90,  # nop
-        0x90,  # nop
+        0x90, 0x90, # nop nop
         0xC1, 0xF8, 0x03,  # sar eax,02 { 2 }
         0x83, 0x3D, 0xF0, 0x4D, 0x35, 0x02, 0x00  # cmp dword ptr [Stronghold_Crusader_Extreme.exe+1F54DF0],00
     ]
@@ -198,28 +197,57 @@ def enable_custom_taxation(tax_table):
 
     custom_tax_instructions = [
         0x8A, 0x80, 0xBB, 0x45, 0x40, 0x00,  # mov al,[eax+Stronghold_Crusader_Extreme.exe+45BB]
-        0x0F, 0xAF, 0x44, 0x24, 0x0C,  # imul eax,[esp+0C]
-        0xE9, 0x13, 0x4D, 0x05, 0x00,  # jmp Stronghold_Crusader_Extreme.exe+5937C
+        0x0F, 0xAF, 0x44, 0x24, 0x0C,        # imul eax,[esp+0C]
+        0xE9, 0x13, 0x4D, 0x05, 0x00,        # jmp Stronghold_Crusader_Extreme.exe+5937C
     ]
     apply_aob_as_patch(0x459B, custom_tax_instructions)
 
     bribe_jumpout_instructions = [
-        0x8B, 0x44, 0x24, 0x08,  # mov eax,[esp+08]
+        0x8B, 0x44, 0x24, 0x08,        # mov eax,[esp+08]
         0xE9, 0x32, 0xB2, 0xFA, 0xFF,  # jmp Stronghold_Crusader_Extreme.exe+45AB
-        0x90,  # nop
-        0x90,  # nop
-        0xC1, 0xF8, 0x02  # sar eax,01
+        0x90, 0x90,                    # nop nop
+        0xC1, 0xF8, 0x02               # sar eax,01
     ]
     apply_aob_as_patch(0x59370, bribe_jumpout_instructions)
 
     custom_bribe_instructions = [
         0x8A, 0x80, 0xBB, 0x45, 0x40, 0x00,  # mov al,[eax+Stronghold_Crusader_Extreme.exe+45BB]
-        0x0F, 0xAF, 0x44, 0x24, 0x0C,  # imul eax,[esp+0C]
-        0xE9, 0xC0, 0x4D, 0x05, 0x00  # jmp Stronghold_Crusader_Extreme.exe+5937C
+        0x0F, 0xAF, 0x44, 0x24, 0x0C,        # imul eax,[esp+0C]
+        0xE9, 0xC0, 0x4D, 0x05, 0x00         # jmp Stronghold_Crusader_Extreme.exe+5937C
     ]
     apply_aob_as_patch(0x45AB, custom_bribe_instructions)
 
     apply_aob_as_patch(0x45BB, [int(float(a)*20) for a in tax_table if a != "0.00"])
+
+
+def enable_custom_combat_bonus(damage_table):
+    combat_jumpout_instructions = [
+        0x31, 0xC9,                    # xor ecx, ecx
+        0xE9, 0xA1, 0x2F, 0xED, 0xFF,  # jmp 4045C8
+        0x90, 0x90, 0x90, 0x90         # nop nop nop nop
+    ]
+    apply_aob_as_patch(0x531620, combat_jumpout_instructions)
+
+    custom_combat_instructions = [
+        0x8A, 0x88, 0xDD, 0x45, 0x40, 0x00,  # mov cl,[eax+004045DD]
+        0x0F, 0xAF, 0x4C, 0x24, 0x04,        # imul ecx,[esp+04]
+        0xE9, 0x53, 0xD0, 0x12, 0x00         # jmp 0053162B
+    ]
+    apply_aob_as_patch(0x4045C8, custom_combat_instructions)
+
+    apply_aob_as_patch(0x4045D8, damage_table)
+
+
+def uninstall_custom_combat_bonus():
+    original_combat_bonus_instructions = [
+        0x83, 0xC0, 0x14,
+        0x0F, 0xAF, 0x44, 0x24, 0x04,
+        0x8D, 0x0C, 0x80
+    ]
+    apply_aob_as_patch(0x531620, original_combat_bonus_instructions)
+
+    codecave_cleanup = [0x03] * 27
+    apply_aob_as_patch(0x4045C8, codecave_cleanup)
 
 
 def uninstall_custom_taxation():
@@ -379,6 +407,10 @@ def install_mod():
                         uninstall["special"]["custom_taxation"] = copy.deepcopy(change)
                         tax_table = change["table"]
                         enable_custom_taxation(tax_table)
+                    elif key == "custom_combat_bonus":
+                        uninstall["special"]["custom_combat_bonus"] = copy.deepcopy(change)
+                        damage_table = change["table"]
+                        enable_custom_combat_bonus(damage_table)
                     elif key == "assassin_rally_speed":
                         uninstall["special"]["assassin_rally_speed"] = copy.deepcopy(change)
                         speed = change["value"] & 0xF
@@ -436,7 +468,8 @@ def uninstall_mod():
                                 shc.write(elem.to_bytes(1, byteorder='little'))
                         if "custom_taxation" in uninstall[size]:
                             uninstall_custom_taxation()
-                        break
+                        if "custom_taxation" in uninstall[size]:
+                            uninstall_custom_combat_bonus()
 
 
 if __name__ == "__main__":
