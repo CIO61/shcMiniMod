@@ -231,6 +231,6 @@ resource_sell_base = 0x2173c0
 
 scenario_pgr_base = 0x6B8FAC
 scenario_pgr_crowded_base = 0x6B9004
-skirmish_pgr_base = 0x6B905C
+skirmish_pgr_base = 0x6B9058
 
 popularity_thresholds = [str(x) for x in range(0, 101, 5)]

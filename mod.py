@@ -188,9 +188,9 @@ def uninstall_tax_reset_feature():
 
 def enable_custom_taxation(tax_table):
     tax_jumpout_instructions = [
-        0xE9, 0xDF, 0xB2, 0xFA, 0xFF,  # jmp Stronghold_Crusader_Extreme.exe+459B
-        0x90, 0x90, # nop nop
-        0xC1, 0xF8, 0x03,  # sar eax,02 { 2 }
+        0xE9, 0xDF, 0xB2, 0xFA, 0xFF,             # jmp Stronghold_Crusader_Extreme.exe+459B
+        0x90, 0x90,                               # nop nop
+        0xC1, 0xF8, 0x03,                         # sar eax,02 { 2 }
         0x83, 0x3D, 0xF0, 0x4D, 0x35, 0x02, 0x00  # cmp dword ptr [Stronghold_Crusader_Extreme.exe+1F54DF0],00
     ]
     apply_aob_as_patch(0x592B7, tax_jumpout_instructions)
@@ -223,19 +223,19 @@ def enable_custom_taxation(tax_table):
 def enable_custom_combat_bonus(damage_table):
     combat_jumpout_instructions = [
         0x31, 0xC9,                    # xor ecx, ecx
-        0xE9, 0xA1, 0x2F, 0xED, 0xFF,  # jmp 4045C8
+        0xE9, 0xA1, 0x2F, 0xED, 0xFF,  # jmp 4045C8 (45C8)
         0x90, 0x90, 0x90, 0x90         # nop nop nop nop
     ]
-    apply_aob_as_patch(0x531620, combat_jumpout_instructions)
+    apply_aob_as_patch(0x131620, combat_jumpout_instructions)
 
     custom_combat_instructions = [
         0x8A, 0x88, 0xDD, 0x45, 0x40, 0x00,  # mov cl,[eax+004045DD]
         0x0F, 0xAF, 0x4C, 0x24, 0x04,        # imul ecx,[esp+04]
         0xE9, 0x53, 0xD0, 0x12, 0x00         # jmp 0053162B
     ]
-    apply_aob_as_patch(0x4045C8, custom_combat_instructions)
+    apply_aob_as_patch(0x45C8, custom_combat_instructions)
 
-    apply_aob_as_patch(0x4045D8, damage_table)
+    apply_aob_as_patch(0x45D8, damage_table)
 
 
 def uninstall_custom_combat_bonus():
@@ -394,6 +394,24 @@ def install_mod():
                                 uninstall[str(size)][str(address)] = read(shc, address, size)
                             write(shc, address, current_pgr[threshold], size)
 
+            elif cfg == "religion":
+                thresholds = config[cfg].get("thresholds", [24, 49, 74, 94])
+                bonuses = config[cfg].get("bonuses", [50, 100, 150, 200])
+                church_bonus = config[cfg].get("church_bonus", 25)
+                cathedral_bonus = config[cfg].get("cathedral_bonus", 50)
+                modify_religion_popularity(thresholds, bonuses, church_bonus, cathedral_bonus)
+
+            elif cfg == "beer":
+                thresholds = config[cfg].get("thresholds", [25, 50, 75, 100])
+                bonuses = config[cfg].get("bonuses", [50, 100, 150, 200])
+                coverage_per_inn = config[cfg].get("coverage_per_inn", 30)
+                modify_beer_popularity(thresholds, bonuses, coverage_per_inn)
+
+            elif cfg == "food":
+                ration_bonuses = config[cfg].get("ration_bonuses", [-200, -100, 100, 200])
+                variety_bonuses = config[cfg].get("variety_bonuses", [25, 50, 75])
+                modify_food_popularity(ration_bonuses, variety_bonuses)
+
             elif cfg == "special":
                 for key, change in config[cfg].items():
                     if not ("special" in uninstall):
@@ -444,6 +462,126 @@ def install_mod():
             json.dump(uninstall, f, indent=4)
 
 
+def modify_religion_popularity(thresholds: list, bonuses: list, church_bonus: int, cathedral_bonus: int):
+    with open(exe_path, "r+b") as shc:
+        write(shc, 0x5BD62, thresholds[0], 1)
+        write(shc, 0x5BD6B, thresholds[1], 1)
+        write(shc, 0x5BD77, thresholds[2], 1)
+        write(shc, 0x5BD85, thresholds[3], 1)
+
+        write(shc, 0x401DF, thresholds[0], 1)
+        write(shc, 0x401E8, thresholds[1], 1)
+        write(shc, 0x401F4, thresholds[2], 1)
+        write(shc, 0x40202, thresholds[3], 1)
+
+        write(shc, 0x40241, thresholds[0]-1, 1)
+        write(shc, 0x40250, thresholds[1]-1, 1)
+        write(shc, 0x4025F, thresholds[2]-1, 1)
+        write(shc, 0x4026E, thresholds[3]-1, 1)
+
+        write(shc, 0x40248, thresholds[0], 4)
+        write(shc, 0x40257, thresholds[1], 4)
+        write(shc, 0x40266, thresholds[2], 4)
+        write(shc, 0x40275, thresholds[3], 4)
+
+        write(shc, 0x3EE52, thresholds[0]-1, 1)
+        write(shc, 0x3EE5B, thresholds[1]-1, 1)
+        write(shc, 0x3EE67, thresholds[2]-1, 1)
+        write(shc, 0x3EE75, thresholds[3]-1, 1)
+
+        write(shc, 0x401EC, bonuses[0], 4)
+        write(shc, 0x401F8, bonuses[1], 1)
+        write(shc, 0x4020B, bonuses[2]-bonuses[3], 1)
+        write(shc, 0x4020E, bonuses[3], 4)
+
+        write(shc, 0x3EE5F, bonuses[0], 4)
+        write(shc, 0x3EE6B, bonuses[1], 4)
+        write(shc, 0x3EE7E, bonuses[2]-bonuses[3], 1)
+        write(shc, 0x3EE81, bonuses[3], 1)
+
+        write(shc, 0x5BD6F, bonuses[0], 4)
+        write(shc, 0x5BD7B, bonuses[1], 4)
+        write(shc, 0x5BD8E, bonuses[2]-bonuses[3], 1)
+        write(shc, 0x5BD91, bonuses[3], 4)
+
+        write(shc, 0x5BDA0, church_bonus, 1)
+        write(shc, 0x5BDAC, cathedral_bonus, 1)
+
+        write(shc, 0x4039D, church_bonus, 1)
+        write(shc, 0x403AC, cathedral_bonus, 1)
+
+        write(shc, 0x3EE92, church_bonus, 1)
+        write(shc, 0x3EE9E, cathedral_bonus, 1)
+
+
+def modify_beer_popularity(thresholds: list, bonuses: list, coverage_per_inn: int):
+    with open(exe_path, "r+b") as shc:
+        write(shc, 0X3B481, thresholds[0], 1)
+        write(shc, 0X3B48A, thresholds[1], 1)
+        write(shc, 0X3B496, thresholds[2], 1)
+        write(shc, 0X3B4A4, thresholds[3], 1)
+
+        write(shc, 0x3EF1B, thresholds[0], 1)
+        write(shc, 0x3EF24, thresholds[1], 1)
+        write(shc, 0x3EF30, thresholds[2], 1)
+        write(shc, 0x3EF3E, thresholds[3], 1)
+
+        write(shc, 0x5BDF8, thresholds[0], 1)
+        write(shc, 0x5BE08, thresholds[1], 1)
+        write(shc, 0x5BE14, thresholds[2], 1)
+        write(shc, 0x5BE22, thresholds[3], 1)
+
+        write(shc, 0x3B48E, bonuses[0], 1)
+        write(shc, 0x3B49A, bonuses[1], 1)
+        write(shc, 0x3B4AD, bonuses[2]-bonuses[3], 1)
+        write(shc, 0x3B4AF, bonuses[3], 4)
+
+        write(shc, 0x3EF28, bonuses[0], 1)
+        write(shc, 0x3EF34, bonuses[1], 1)
+        write(shc, 0x3EF47, bonuses[2]-bonuses[3], 1)
+        write(shc, 0x3EF4A, bonuses[3], 1)
+
+        write(shc, 0x5BE0C, bonuses[0], 1)
+        write(shc, 0x5BE18, bonuses[1], 1)
+        write(shc, 0x5BE2B, bonuses[2]-bonuses[3], 1)
+        write(shc, 0x5BE2E, bonuses[3], 1)
+
+        write(shc, 0x59077, coverage_per_inn*100, 4)
+
+
+def modify_food_popularity(ration_bonuses: list, variety_bonuses: list):
+    with open(exe_path, "r+b") as shc:
+        write(shc, 0x3B90C, ration_bonuses[0], 4)
+        write(shc, 0x3B951, ration_bonuses[0], 4)
+        write(shc, 0x3B948, ration_bonuses[1], 4)
+        write(shc, 0x3B937, ration_bonuses[2], 1)
+        write(shc, 0x3B92A, ration_bonuses[3], 4)
+
+        write(shc, 0x3BADD, variety_bonuses[0]-2, 1)
+        write(shc, 0x3BAE7, variety_bonuses[1]-3, 1)
+        write(shc, 0x3BAF0, variety_bonuses[2], 4)
+
+        write(shc, 0x3EAC3, ration_bonuses[0], 4)
+        write(shc, 0x3EAFB, ration_bonuses[0], 4)
+        write(shc, 0x3EAF5, ration_bonuses[1]-1, 1)
+        write(shc, 0x3EAE2, ration_bonuses[2]-3, 1)
+        write(shc, 0x3EAD5, ration_bonuses[3], 4)
+
+        write(shc, 0x3EB1B, variety_bonuses[0], 1)
+        write(shc, 0x3EB25, variety_bonuses[1], 1)
+        write(shc, 0x3EB2F, variety_bonuses[2], 1)
+
+        write(shc, 0x5BB66, ration_bonuses[0], 4)
+        write(shc, 0x5BB78, ration_bonuses[0], 4)
+        write(shc, 0x5BB85, ration_bonuses[1]-1, 1)
+        write(shc, 0x5BBA1, ration_bonuses[2], 4)
+        write(shc, 0x5BB97, ration_bonuses[3], 4)
+
+        write(shc, 0x5BBB9, variety_bonuses[0], 1)
+        write(shc, 0x5BBC3, variety_bonuses[1], 1)
+        write(shc, 0x5BB4D, variety_bonuses[2], 1)
+
+
 def uninstall_mod():
     if os.path.isfile(uninst_path):
         with open(uninst_path, "r") as f:
@@ -484,8 +622,11 @@ if __name__ == "__main__":
         gamedir = os.path.abspath(settings.gamepath)
     else:
         gamedir = os.path.abspath(os.path.join(".", ".."))
+    if getattr(sys, "frozen", False):
+        my_dir = os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        my_dir = os.path.dirname(os.path.abspath(__file__))
 
-    my_dir = os.path.dirname(os.path.abspath(sys.executable))
     uninst_path = os.path.join(my_dir, "uninstall.json")
     configpath = os.path.join(my_dir, "config.json")
 
