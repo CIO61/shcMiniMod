@@ -34,6 +34,7 @@ get_resource_sell_address = partial(get_address, resource_names, resource_sell_b
 get_scenario_pgr_address = partial(get_address, popularity_thresholds, scenario_pgr_base, 4)
 get_scenario_pgr_crowded_address = partial(get_address, popularity_thresholds, scenario_pgr_crowded_base, 4)
 get_skirmish_pgr_address = partial(get_address, popularity_thresholds, skirmish_pgr_base, 4)
+uninstall = {}
 
 
 def get_unit_melee_dmg_address(attacker_name, defender_name):
@@ -62,7 +63,12 @@ def write(shc, address, value, size):
             shc.write(int(value).to_bytes(size, byteorder='little'))
     except ValueError:
         shc.write(int(value, base=16).to_bytes(size, byteorder='little'))
-    # print(size, address, value)
+
+
+def write_with_uninstall_information(shc, address, value, size):
+    if str(address) not in uninstall[str(size)]:
+        uninstall[str(size)][str(address)] = read(shc, address, size)
+    write(shc, address, value, size)
 
 
 def apply_aob_as_patch(address, array):
@@ -271,11 +277,9 @@ def install_mod():
     if os.path.isfile(uninst_path):
         with open(uninst_path, "r") as f:
             try:
-                uninstall = json.load(f)
+                uninstall.update(json.load(f))
             except json.JSONDecodeError:
-                uninstall = {}
-    else:
-        uninstall = {}
+                pass
 
     if "4" not in uninstall:
         uninstall["4"] = {}
@@ -294,22 +298,16 @@ def install_mod():
                         address = get_building_cost_address(key)
 
                         for cost in current_building["cost"]:
-                            if str(address) not in uninstall[str(size)]:
-                                uninstall[str(size)][str(address)] = read(shc, address, size)
-                            write(shc, address, cost, size)
+                            write_with_uninstall_information(shc, address, cost, size)
                             address += size
 
                     if "health" in current_building.keys():
                         address = get_building_health_address(key)
-                        if str(address) not in uninstall[str(size)]:
-                            uninstall[str(size)][str(address)] = read(shc, address, size)
-                        write(shc, address, current_building["health"], size)
+                        write_with_uninstall_information(shc, address, current_building["health"], size)
 
-                    if "population" in current_building.keys():
+                    if "housing" in current_building.keys():
                         address = get_building_population_address(key)
-                        if str(address) not in uninstall[str(size)]:
-                            uninstall[str(size)][str(address)] = read(shc, address, size)
-                        write(shc, address, current_building["population"], size)
+                        write_with_uninstall_information(shc, address, current_building["housing"], size)
 
             elif cfg == "units":
                 units = config[cfg]
@@ -320,79 +318,59 @@ def install_mod():
 
                     if "health" in current_unit.keys():
                         address = get_unit_health_address(key)
-                        if str(address) not in uninstall[str(size)]:
-                            uninstall[str(size)][str(address)] = read(shc, address, size)
-                        write(shc, address, current_unit["health"], size)
+                        write_with_uninstall_information(shc, address, current_unit["health"], size)
 
                     if "arrowDamage" in current_unit.keys():
                         address = get_unit_arrow_dmg_address(key)
-                        if str(address) not in uninstall[str(size)]:
-                            uninstall[str(size)][str(address)] = read(shc, address, size)
-                        write(shc, address, current_unit["arrowDamage"], size)
+                        write_with_uninstall_information(shc, address, current_unit["arrowDamage"], size)
 
                     if "xbowDamage" in current_unit.keys():
                         address = get_unit_xbow_dmg_address(key)
-                        if str(address) not in uninstall[str(size)]:
-                            uninstall[str(size)][str(address)] = read(shc, address, size)
-                        write(shc, address, current_unit["xbowDamage"], size)
+                        write_with_uninstall_information(shc, address, current_unit["xbowDamage"], size)
 
                     if "stoneDamage" in current_unit.keys():
                         address = get_unit_stone_dmg_address(key)
-                        if str(address) not in uninstall[str(size)]:
-                            uninstall[str(size)][str(address)] = read(shc, address, size)
-                        write(shc, address, current_unit["stoneDamage"], size)
+                        write_with_uninstall_information(shc, address, current_unit["stoneDamage"], size)
 
                     if "meleeDamageVs" in current_unit.keys():
                         for defender in current_unit["meleeDamageVs"]:
                             address = get_unit_melee_dmg_address(key, defender)
-                            if str(address) not in uninstall[str(size)]:
-                                uninstall[str(size)][str(address)] = read(shc, address, size)
-                            write(shc, address, current_unit["meleeDamageVs"][defender], size)
+                            write_with_uninstall_information(shc, address, current_unit["meleeDamageVs"][defender], size)
 
             elif cfg == "resources":
                 resources = config[cfg]
-
+                size = 4
                 for key in resources:
                     current_resource = resources[key]
 
                     if "buy" in current_resource.keys():
                         address = get_resource_buy_address(key)
-                        if str(address) not in uninstall[str(size)]:
-                            uninstall[str(size)][str(address)] = read(shc, address, size)
-                        write(shc, address, current_resource["buy"], size)
+                        write_with_uninstall_information(shc, address, current_resource["buy"], size)
 
                     if "sell" in current_resource.keys():
                         address = get_resource_sell_address(key)
-                        if str(address) not in uninstall[str(size)]:
-                            uninstall[str(size)][str(address)] = read(shc, address, size)
-                        write(shc, address, current_resource["sell"], size)
+                        write_with_uninstall_information(shc, address, current_resource["sell"], size)
 
-            elif cfg == "population":
+            elif cfg == "population_gathering_rate":
                 gathering_rates = config[cfg]
-
+                size = 4
                 for pgr in gathering_rates:
                     current_pgr = gathering_rates[pgr]
 
                     if pgr == "Skirmish":
                         for threshold in current_pgr:
                             address = get_skirmish_pgr_address(threshold)
-                            if str(address) not in uninstall[str(size)]:
-                                uninstall[str(size)][str(address)] = read(shc, address, size)
-                            write(shc, address, current_pgr[threshold], size)
+                            write_with_uninstall_information(shc, address, current_pgr[threshold], size)
 
                     if pgr == "Scenario_lt_100":
                         for threshold in current_pgr:
                             address = get_scenario_pgr_address(threshold)
-                            if str(address) not in uninstall[str(size)]:
-                                uninstall[str(size)][str(address)] = read(shc, address, size)
-                            write(shc, address, current_pgr[threshold], size)
+                            write_with_uninstall_information(shc, address, current_pgr[threshold], size)
 
                     if pgr == "Scenario_gt_100":
                         for threshold in current_pgr:
                             address = get_scenario_pgr_crowded_address(threshold)
-                            if str(address) not in uninstall[str(size)]:
-                                uninstall[str(size)][str(address)] = read(shc, address, size)
-                            write(shc, address, current_pgr[threshold], size)
+                            write_with_uninstall_information(shc, address, current_pgr[threshold], size)
 
             elif cfg == "religion":
                 thresholds = config[cfg].get("thresholds", [24, 49, 74, 94])
@@ -446,15 +424,11 @@ def install_mod():
                         uninstall[str(size)] = {}
 
                     if type(change["value"]) != list:
-                        if str(address) not in uninstall[str(size)]:
-                            uninstall[str(size)][str(address)] = read(shc, address, size)
-                        write(shc, address, change["value"], size)
+                        write_with_uninstall_information(shc, address, change["value"], size)
 
                     elif type(change["value"]) == list:
                         for item in change["value"]:
-                            if str(address) not in uninstall[str(size)]:
-                                uninstall[str(size)][str(address)] = read(shc, address, size)
-                            write(shc, address, item, size)
+                            write_with_uninstall_information(shc, address, item, size)
                             address += size
 
     if settings.create_uninst:
@@ -464,129 +438,129 @@ def install_mod():
 
 def modify_religion_popularity(thresholds: list, bonuses: list, church_bonus: int, cathedral_bonus: int):
     with open(exe_path, "r+b") as shc:
-        write(shc, 0x5BD62, thresholds[0], 1)
-        write(shc, 0x5BD6B, thresholds[1], 1)
-        write(shc, 0x5BD77, thresholds[2], 1)
-        write(shc, 0x5BD85, thresholds[3], 1)
+        write_with_uninstall_information(shc, 0x5BD62, thresholds[0], 1)
+        write_with_uninstall_information(shc, 0x5BD6B, thresholds[1], 1)
+        write_with_uninstall_information(shc, 0x5BD77, thresholds[2], 1)
+        write_with_uninstall_information(shc, 0x5BD85, thresholds[3], 1)
 
-        write(shc, 0x401DF, thresholds[0], 1)
-        write(shc, 0x401E8, thresholds[1], 1)
-        write(shc, 0x401F4, thresholds[2], 1)
-        write(shc, 0x40202, thresholds[3], 1)
+        write_with_uninstall_information(shc, 0x401DF, thresholds[0], 1)
+        write_with_uninstall_information(shc, 0x401E8, thresholds[1], 1)
+        write_with_uninstall_information(shc, 0x401F4, thresholds[2], 1)
+        write_with_uninstall_information(shc, 0x40202, thresholds[3], 1)
 
-        write(shc, 0x40241, thresholds[0]-1, 1)
-        write(shc, 0x40250, thresholds[1]-1, 1)
-        write(shc, 0x4025F, thresholds[2]-1, 1)
-        write(shc, 0x4026E, thresholds[3]-1, 1)
+        write_with_uninstall_information(shc, 0x40241, thresholds[0]-1, 1)
+        write_with_uninstall_information(shc, 0x40250, thresholds[1]-1, 1)
+        write_with_uninstall_information(shc, 0x4025F, thresholds[2]-1, 1)
+        write_with_uninstall_information(shc, 0x4026E, thresholds[3]-1, 1)
 
-        write(shc, 0x40248, thresholds[0], 4)
-        write(shc, 0x40257, thresholds[1], 4)
-        write(shc, 0x40266, thresholds[2], 4)
-        write(shc, 0x40275, thresholds[3], 4)
+        write_with_uninstall_information(shc, 0x40248, thresholds[0], 4)
+        write_with_uninstall_information(shc, 0x40257, thresholds[1], 4)
+        write_with_uninstall_information(shc, 0x40266, thresholds[2], 4)
+        write_with_uninstall_information(shc, 0x40275, thresholds[3], 4)
 
-        write(shc, 0x3EE52, thresholds[0]-1, 1)
-        write(shc, 0x3EE5B, thresholds[1]-1, 1)
-        write(shc, 0x3EE67, thresholds[2]-1, 1)
-        write(shc, 0x3EE75, thresholds[3]-1, 1)
+        write_with_uninstall_information(shc, 0x3EE52, thresholds[0]-1, 1)
+        write_with_uninstall_information(shc, 0x3EE5B, thresholds[1]-1, 1)
+        write_with_uninstall_information(shc, 0x3EE67, thresholds[2]-1, 1)
+        write_with_uninstall_information(shc, 0x3EE75, thresholds[3]-1, 1)
 
-        write(shc, 0x401EC, bonuses[0], 4)
-        write(shc, 0x401F8, bonuses[1], 1)
-        write(shc, 0x4020B, bonuses[2]-bonuses[3], 1)
-        write(shc, 0x4020E, bonuses[3], 4)
+        write_with_uninstall_information(shc, 0x401EC, bonuses[0], 4)
+        write_with_uninstall_information(shc, 0x401F8, bonuses[1], 1)
+        write_with_uninstall_information(shc, 0x4020B, bonuses[2]-bonuses[3], 1)
+        write_with_uninstall_information(shc, 0x4020E, bonuses[3], 4)
 
-        write(shc, 0x3EE5F, bonuses[0], 4)
-        write(shc, 0x3EE6B, bonuses[1], 4)
-        write(shc, 0x3EE7E, bonuses[2]-bonuses[3], 1)
-        write(shc, 0x3EE81, bonuses[3], 1)
+        write_with_uninstall_information(shc, 0x3EE5F, bonuses[0], 4)
+        write_with_uninstall_information(shc, 0x3EE6B, bonuses[1], 4)
+        write_with_uninstall_information(shc, 0x3EE7E, bonuses[2]-bonuses[3], 1)
+        write_with_uninstall_information(shc, 0x3EE81, bonuses[3], 1)
 
-        write(shc, 0x5BD6F, bonuses[0], 4)
-        write(shc, 0x5BD7B, bonuses[1], 4)
-        write(shc, 0x5BD8E, bonuses[2]-bonuses[3], 1)
-        write(shc, 0x5BD91, bonuses[3], 4)
+        write_with_uninstall_information(shc, 0x5BD6F, bonuses[0], 4)
+        write_with_uninstall_information(shc, 0x5BD7B, bonuses[1], 4)
+        write_with_uninstall_information(shc, 0x5BD8E, bonuses[2]-bonuses[3], 1)
+        write_with_uninstall_information(shc, 0x5BD91, bonuses[3], 4)
 
-        write(shc, 0x5BDA0, church_bonus, 1)
-        write(shc, 0x5BDAC, cathedral_bonus, 1)
+        write_with_uninstall_information(shc, 0x5BDA0, church_bonus, 1)
+        write_with_uninstall_information(shc, 0x5BDAC, cathedral_bonus, 1)
 
-        write(shc, 0x4039D, church_bonus, 1)
-        write(shc, 0x403AC, cathedral_bonus, 1)
+        write_with_uninstall_information(shc, 0x4039D, church_bonus, 1)
+        write_with_uninstall_information(shc, 0x403AC, cathedral_bonus, 1)
 
-        write(shc, 0x3EE92, church_bonus, 1)
-        write(shc, 0x3EE9E, cathedral_bonus, 1)
+        write_with_uninstall_information(shc, 0x3EE92, church_bonus, 1)
+        write_with_uninstall_information(shc, 0x3EE9E, cathedral_bonus, 1)
 
 
 def modify_beer_popularity(thresholds: list, bonuses: list, coverage_per_inn: int):
     with open(exe_path, "r+b") as shc:
-        write(shc, 0X3B481, thresholds[0], 1)
-        write(shc, 0X3B48A, thresholds[1], 1)
-        write(shc, 0X3B496, thresholds[2], 1)
-        write(shc, 0X3B4A4, thresholds[3], 1)
+        write_with_uninstall_information(shc, 0X3B481, thresholds[0], 1)
+        write_with_uninstall_information(shc, 0X3B48A, thresholds[1], 1)
+        write_with_uninstall_information(shc, 0X3B496, thresholds[2], 1)
+        write_with_uninstall_information(shc, 0X3B4A4, thresholds[3], 1)
 
-        write(shc, 0x3EF1B, thresholds[0], 1)
-        write(shc, 0x3EF24, thresholds[1], 1)
-        write(shc, 0x3EF30, thresholds[2], 1)
-        write(shc, 0x3EF3E, thresholds[3], 1)
+        write_with_uninstall_information(shc, 0x3EF1B, thresholds[0], 1)
+        write_with_uninstall_information(shc, 0x3EF24, thresholds[1], 1)
+        write_with_uninstall_information(shc, 0x3EF30, thresholds[2], 1)
+        write_with_uninstall_information(shc, 0x3EF3E, thresholds[3], 1)
 
-        write(shc, 0x5BDF8, thresholds[0], 1)
-        write(shc, 0x5BE08, thresholds[1], 1)
-        write(shc, 0x5BE14, thresholds[2], 1)
-        write(shc, 0x5BE22, thresholds[3], 1)
+        write_with_uninstall_information(shc, 0x5BDF8, thresholds[0], 1)
+        write_with_uninstall_information(shc, 0x5BE08, thresholds[1], 1)
+        write_with_uninstall_information(shc, 0x5BE14, thresholds[2], 1)
+        write_with_uninstall_information(shc, 0x5BE22, thresholds[3], 1)
 
-        write(shc, 0x3B48E, bonuses[0], 1)
-        write(shc, 0x3B49A, bonuses[1], 1)
-        write(shc, 0x3B4AD, bonuses[2]-bonuses[3], 1)
-        write(shc, 0x3B4AF, bonuses[3], 4)
+        write_with_uninstall_information(shc, 0x3B48E, bonuses[0], 1)
+        write_with_uninstall_information(shc, 0x3B49A, bonuses[1], 1)
+        write_with_uninstall_information(shc, 0x3B4AD, bonuses[2]-bonuses[3], 1)
+        write_with_uninstall_information(shc, 0x3B4AF, bonuses[3], 4)
 
-        write(shc, 0x3EF28, bonuses[0], 1)
-        write(shc, 0x3EF34, bonuses[1], 1)
-        write(shc, 0x3EF47, bonuses[2]-bonuses[3], 1)
-        write(shc, 0x3EF4A, bonuses[3], 1)
+        write_with_uninstall_information(shc, 0x3EF28, bonuses[0], 1)
+        write_with_uninstall_information(shc, 0x3EF34, bonuses[1], 1)
+        write_with_uninstall_information(shc, 0x3EF47, bonuses[2]-bonuses[3], 1)
+        write_with_uninstall_information(shc, 0x3EF4A, bonuses[3], 1)
 
-        write(shc, 0x5BE0C, bonuses[0], 1)
-        write(shc, 0x5BE18, bonuses[1], 1)
-        write(shc, 0x5BE2B, bonuses[2]-bonuses[3], 1)
-        write(shc, 0x5BE2E, bonuses[3], 1)
+        write_with_uninstall_information(shc, 0x5BE0C, bonuses[0], 1)
+        write_with_uninstall_information(shc, 0x5BE18, bonuses[1], 1)
+        write_with_uninstall_information(shc, 0x5BE2B, bonuses[2]-bonuses[3], 1)
+        write_with_uninstall_information(shc, 0x5BE2E, bonuses[3], 1)
 
-        write(shc, 0x59077, coverage_per_inn*100, 4)
+        write_with_uninstall_information(shc, 0x59077, coverage_per_inn*100, 4)
 
 
 def modify_food_popularity(ration_bonuses: list, variety_bonuses: list):
     with open(exe_path, "r+b") as shc:
-        write(shc, 0x3B90C, ration_bonuses[0], 4)
-        write(shc, 0x3B951, ration_bonuses[0], 4)
-        write(shc, 0x3B948, ration_bonuses[1], 4)
-        write(shc, 0x3B937, ration_bonuses[2], 1)
-        write(shc, 0x3B92A, ration_bonuses[3], 4)
+        write_with_uninstall_information(shc, 0x3B90C, ration_bonuses[0], 4)
+        write_with_uninstall_information(shc, 0x3B951, ration_bonuses[0], 4)
+        write_with_uninstall_information(shc, 0x3B948, ration_bonuses[1], 4)
+        write_with_uninstall_information(shc, 0x3B937, ration_bonuses[2], 1)
+        write_with_uninstall_information(shc, 0x3B92A, ration_bonuses[3], 4)
 
-        write(shc, 0x3BADD, variety_bonuses[0]-2, 1)
-        write(shc, 0x3BAE7, variety_bonuses[1]-3, 1)
-        write(shc, 0x3BAF0, variety_bonuses[2], 4)
+        write_with_uninstall_information(shc, 0x3BADD, variety_bonuses[0]-2, 1)
+        write_with_uninstall_information(shc, 0x3BAE7, variety_bonuses[1]-3, 1)
+        write_with_uninstall_information(shc, 0x3BAF0, variety_bonuses[2], 4)
 
-        write(shc, 0x3EAC3, ration_bonuses[0], 4)
-        write(shc, 0x3EAFB, ration_bonuses[0], 4)
-        write(shc, 0x3EAF5, ration_bonuses[1]-1, 1)
-        write(shc, 0x3EAE2, ration_bonuses[2]-3, 1)
-        write(shc, 0x3EAD5, ration_bonuses[3], 4)
+        write_with_uninstall_information(shc, 0x3EAC3, ration_bonuses[0], 4)
+        write_with_uninstall_information(shc, 0x3EAFB, ration_bonuses[0], 4)
+        write_with_uninstall_information(shc, 0x3EAF5, ration_bonuses[1]-1, 1)
+        write_with_uninstall_information(shc, 0x3EAE2, ration_bonuses[2]-3, 1)
+        write_with_uninstall_information(shc, 0x3EAD5, ration_bonuses[3], 4)
 
-        write(shc, 0x3EB1B, variety_bonuses[0], 1)
-        write(shc, 0x3EB25, variety_bonuses[1], 1)
-        write(shc, 0x3EB2F, variety_bonuses[2], 1)
+        write_with_uninstall_information(shc, 0x3EB1B, variety_bonuses[0], 1)
+        write_with_uninstall_information(shc, 0x3EB25, variety_bonuses[1], 1)
+        write_with_uninstall_information(shc, 0x3EB2F, variety_bonuses[2], 1)
 
-        write(shc, 0x5BB66, ration_bonuses[0], 4)
-        write(shc, 0x5BB78, ration_bonuses[0], 4)
-        write(shc, 0x5BB85, ration_bonuses[1]-1, 1)
-        write(shc, 0x5BBA1, ration_bonuses[2], 4)
-        write(shc, 0x5BB97, ration_bonuses[3], 4)
+        write_with_uninstall_information(shc, 0x5BB66, ration_bonuses[0], 4)
+        write_with_uninstall_information(shc, 0x5BB78, ration_bonuses[0], 4)
+        write_with_uninstall_information(shc, 0x5BB85, ration_bonuses[1]-1, 1)
+        write_with_uninstall_information(shc, 0x5BBA1, ration_bonuses[2], 4)
+        write_with_uninstall_information(shc, 0x5BB97, ration_bonuses[3], 4)
 
-        write(shc, 0x5BBB9, variety_bonuses[0], 1)
-        write(shc, 0x5BBC3, variety_bonuses[1], 1)
-        write(shc, 0x5BB4D, variety_bonuses[2], 1)
+        write_with_uninstall_information(shc, 0x5BBB9, variety_bonuses[0], 1)
+        write_with_uninstall_information(shc, 0x5BBC3, variety_bonuses[1], 1)
+        write_with_uninstall_information(shc, 0x5BB4D, variety_bonuses[2], 1)
 
 
 def uninstall_mod():
     if os.path.isfile(uninst_path):
         with open(uninst_path, "r") as f:
             try:
-                uninstall = json.load(f)
+                uninstall.update(json.load(f))
             except json.JSONDecodeError:
                 return
 
@@ -606,7 +580,7 @@ def uninstall_mod():
                                 shc.write(elem.to_bytes(1, byteorder='little'))
                         if "custom_taxation" in uninstall[size]:
                             uninstall_custom_taxation()
-                        if "custom_taxation" in uninstall[size]:
+                        if "custom_combat_bonus" in uninstall[size]:
                             uninstall_custom_combat_bonus()
 
 

@@ -283,7 +283,8 @@
             "health": {
               "$ref": "#/$defs/numeric_string"
             },
-            "population": {
+            "housing": {
+              "description": "Housing provided by this building",
               "$ref": "#/$defs/numeric_string"
             }
           }
