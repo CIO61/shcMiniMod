@@ -23,10 +23,10 @@ get_building_cost_address = partial(get_address, building_names, building_cost_b
 get_building_health_address = partial(get_address, building_names, building_health_base, 4)
 get_building_population_address = partial(get_address, building_names, building_population_base, 4)
 
-get_unit_health_address = partial(get_address, unit_names, unit_health_base,4)
-get_unit_arrow_dmg_address = partial(get_address, unit_names, unit_arrow_dmg_base,4)
-get_unit_xbow_dmg_address = partial(get_address, unit_names, unit_xbow_dmg_base,4)
-get_unit_stone_dmg_address = partial(get_address, unit_names, unit_stone_dmg_base,4)
+get_unit_health_address = partial(get_address, unit_names, unit_health_base, 4)
+get_unit_arrow_dmg_address = partial(get_address, unit_names, unit_arrow_dmg_base, 4)
+get_unit_xbow_dmg_address = partial(get_address, unit_names, unit_xbow_dmg_base, 4)
+get_unit_stone_dmg_address = partial(get_address, unit_names, unit_stone_dmg_base, 4)
 
 get_resource_buy_address = partial(get_address, resource_names, resource_buy_base, 4)
 get_resource_sell_address = partial(get_address, resource_names, resource_sell_base, 4)
@@ -72,18 +72,23 @@ def write_with_uninstall_information(shc, address, value, size):
 
 
 def apply_aob_as_patch(address, array):
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(exe_path, "r+b") as shc:
         shc.seek(0)
         shc.seek(address)
         for elem in array:
-            shc.write(int(str(elem)).to_bytes(1, byteorder='little'))
+            if type(elem) == tuple:
+                value = elem[0]
+                size = elem[1]
+                shc.write(int(value).to_bytes(size, byteorder='little'))
+            else:
+                shc.write(int(str(elem)).to_bytes(1, byteorder='little'))
 
 
 def install_tax_reset_feature(reset_value):
     original_section_count = None
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
+    with open(exe_path, "r+b") as shc:
         shc.seek(0)
-        shc.seek(int("0x11E", 16))
+        shc.seek(0x11E)
         original_section_count = int.from_bytes(shc.read(1), byteorder='little')
 
     if original_section_count != 5:
@@ -94,20 +99,10 @@ def install_tax_reset_feature(reset_value):
     SIZE = 0x8000
 
     # Increase image size to accommodate for extra code
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x168", 16))
-        shc.write((0x2B90000).to_bytes(4, byteorder='little'))
-
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x2B9", 16))
-        shc.write((0x70).to_bytes(1, byteorder='little'))
-
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x2C1", 16))
-        shc.write((0x70).to_bytes(1, byteorder='little'))
+    with open(exe_path, "r+b") as shc:
+        write(shc, 0x168, 0x2B90000, 4)
+        write(shc, 0x2B9, 0x70, 1)
+        write(shc, 0x2C1, 0x70, 1)
 
     # Reset tax on < 1 popularity
     tax_instructions = [
@@ -123,19 +118,13 @@ def install_tax_reset_feature(reset_value):
 
     position = 0x2F8F000 - 0x45bb2c
 
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x5BB27", 16))
-        shc.write(int("0xE9", 16).to_bytes(1, byteorder='little'))
-        shc.write((position).to_bytes(4, byteorder='little'))
-        shc.write((0x90).to_bytes(1, byteorder='little'))
-        shc.write((0x90).to_bytes(1, byteorder='little'))
+    apply_aob_as_patch(0x5BB27, [
+            0xE9, (position, 4),
+            0x90,
+            0x90,
+        ])
 
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x7BE025", 16))
-        for i in range(0xB):
-            shc.write((0x90).to_bytes(1, byteorder='little'))
+    apply_aob_as_patch(0x7BE025, [0x90] * 11)
 
     # Zero-out tax gold on < 1 popularity
     zero_tax_instructions = [
@@ -154,35 +143,16 @@ def install_tax_reset_feature(reset_value):
 
     position = 0x2F8F030 - 0x45C1B0
 
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x5C1AB", 16))
-        shc.write(int("0xE9", 16).to_bytes(1, byteorder='little'))
-        shc.write((position).to_bytes(4, byteorder='little'))
-
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x7BE050", 16))
-        for i in range(0xFB0):
-            shc.write((0x90).to_bytes(1, byteorder='little'))
+    apply_aob_as_patch(0x5C1AB, [0xE9, (position, 4)])
+    apply_aob_as_patch(0x7BE050, [0x90]*0xFB0)
 
 
 def uninstall_tax_reset_feature():
     # Reset image size to original ucp section size
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x168", 16))
-        shc.write((0x2F8E000).to_bytes(4, byteorder='little'))
-
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x2B9", 16))
-        shc.write((0x50).to_bytes(1, byteorder='little'))
-
-    with open(os.path.join(gamedir, "Stronghold_Crusader_Extreme.exe"), "r+b") as shc:
-        shc.seek(0)
-        shc.seek(int("0x2C1", 16))
-        shc.write((0x50).to_bytes(1, byteorder='little'))
+    with open(exe_path, "r+b") as shc:
+        write(shc, 0x168, 0x2F8E000, 4)
+        write(shc, 0x2B9, 0x50, 1)
+        write(shc, 0x2C1, 0x50, 1)
 
     # Undo tax reset change
     original_tax_reset_instructions = [0x89, 0x84, 0x3E, 0xB4, 0x38, 0x0C, 0x00]
