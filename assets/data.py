@@ -1,3 +1,5 @@
+from functools import partial
+
 building_names = [
     "Hovel",
     "House",
@@ -234,3 +236,55 @@ scenario_pgr_crowded_base = 0x6B9004
 skirmish_pgr_base = 0x6B9058
 
 popularity_thresholds = [str(x) for x in range(0, 101, 5)]
+
+
+def get_address(name_list: list, base_address, size, name):
+    index = name_list.index(name)
+    if index == -1:
+        raise Exception(f"Invalid name: {name}")
+    return base_address + index * size
+
+
+get_building_cost_address = partial(get_address, building_names, building_cost_base, 20)
+get_building_health_address = partial(get_address, building_names, building_health_base, 4)
+get_building_population_address = partial(get_address, building_names, building_population_base, 4)
+
+get_unit_health_address = partial(get_address, unit_names, unit_health_base, 4)
+get_unit_arrow_dmg_address = partial(get_address, unit_names, unit_arrow_dmg_base, 4)
+get_unit_xbow_dmg_address = partial(get_address, unit_names, unit_xbow_dmg_base, 4)
+get_unit_stone_dmg_address = partial(get_address, unit_names, unit_stone_dmg_base, 4)
+
+get_resource_buy_address = partial(get_address, resource_names, resource_buy_base, 4)
+get_resource_sell_address = partial(get_address, resource_names, resource_sell_base, 4)
+
+get_scenario_pgr_address = partial(get_address, popularity_thresholds, scenario_pgr_base, 4)
+get_scenario_pgr_crowded_address = partial(get_address, popularity_thresholds, scenario_pgr_crowded_base, 4)
+get_skirmish_pgr_address = partial(get_address, popularity_thresholds, skirmish_pgr_base, 4)
+
+
+def get_unit_melee_dmg_address(attacker_name, defender_name):
+    attacker_index = unit_names.index(attacker_name)
+    defender_index = unit_names.index(defender_name)
+    if attacker_index == -1:
+        raise Exception("Invalid unit name")
+    if defender_index == -1:
+        raise Exception("Invalid unit name")
+    return unit_melee_dmg_base + defender_index * 4 + attacker_index * 16 + attacker_index * (len(unit_names) - 1) * 4
+
+
+def read(shc, address, size):
+    shc.seek(0)
+    shc.seek(address)
+    return int.from_bytes(shc.read(size), byteorder='little')
+
+
+def write(shc, address, value, size):
+    shc.seek(0)
+    shc.seek(address)
+    try:
+        if int(value) < 0:
+            shc.write(int(value).to_bytes(size, byteorder='little', signed=True))
+        else:
+            shc.write(int(value).to_bytes(size, byteorder='little'))
+    except ValueError:
+        shc.write(int(value, base=16).to_bytes(size, byteorder='little'))
