@@ -386,6 +386,9 @@
             "stoneDamage": {
               "$ref": "#/$defs/numeric_string"
             },
+            "baseMeleeDamage": {
+              "$ref": "#/$defs/numeric_string"
+            },
             "meleeDamageVs": {
               "type": "object",
               "patternProperties": {

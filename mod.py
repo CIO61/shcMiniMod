@@ -9,7 +9,7 @@ from assets import (get_building_cost_address, get_building_health_address, get_
                     get_unit_health_address, get_unit_arrow_dmg_address, get_unit_xbow_dmg_address,
                     get_unit_stone_dmg_address, get_resource_buy_address, get_resource_sell_address,
                     get_scenario_pgr_address, get_scenario_pgr_crowded_address,
-                    get_skirmish_pgr_address, get_unit_melee_dmg_address, read, write)
+                    get_skirmish_pgr_address, get_unit_melee_dmg_address, read, write, unit_names)
 
 
 def write_with_uninst_info(shc, address, value, size):
@@ -208,6 +208,11 @@ def modify_unit_stats(units):
             if "stoneDamage" in current_unit.keys():
                 address = get_unit_stone_dmg_address(key)
                 write_with_uninst_info(shc, address, current_unit["stoneDamage"], size)
+
+            if "baseMeleeDamage" in current_unit.keys():
+                for defender in unit_names:
+                    address = get_unit_melee_dmg_address(key, defender)
+                    write_with_uninst_info(shc, address, current_unit["baseMeleeDamage"], size)
 
             if "meleeDamageVs" in current_unit.keys():
                 for defender in current_unit["meleeDamageVs"]:
