@@ -332,6 +332,102 @@ def uninstall_tax_reset_feature():
     apply_aob_as_patch(0x5C1AB, original_tax_gold_instructions)
 
 
+def modify_taxation_rules(taxation_rules):
+    with open(exe_path, "r+b") as shc:
+        for key in taxation_rules:
+            if key == "popularity":
+                popularity = taxation_rules[key]
+                write_with_uninst_info(shc, 0x3B0AE, popularity[0], 4)
+                write_with_uninst_info(shc, 0x3B0BD, popularity[1], 4)
+                write_with_uninst_info(shc, 0x3B0C9, popularity[2], 4)
+                write_with_uninst_info(shc, 0x3B0D5, popularity[3], 4)
+                write_with_uninst_info(shc, 0x3B0E1, popularity[4], 4)
+                write_with_uninst_info(shc, 0x3B0Ed, popularity[5], 4)
+                write_with_uninst_info(shc, 0x3B0F9, popularity[6], 4)
+                write_with_uninst_info(shc, 0x3B105, popularity[7], 4)
+                write_with_uninst_info(shc, 0x3B111, popularity[8], 4)
+                write_with_uninst_info(shc, 0x3B11D, popularity[9], 4)
+                write_with_uninst_info(shc, 0x3B129, popularity[10], 4)
+                write_with_uninst_info(shc, 0x3B133, popularity[11], 4)
+
+                write_with_uninst_info(shc, 0x3EBE3, popularity[0], 4)
+                write_with_uninst_info(shc, 0x3EBF0, max(-127, min(popularity[1]-1, 127)), 1)
+                write_with_uninst_info(shc, 0x3EBFA, max(-127, min(popularity[2]-2, 127)), 1)
+                write_with_uninst_info(shc, 0x3EC04, max(-127, min(popularity[3]-3, 127)), 1)
+                write_with_uninst_info(shc, 0x3EC0E, max(-127, min(popularity[4]-4, 127)), 1)
+                write_with_uninst_info(shc, 0x3EC18, max(-127, min(popularity[5]-5, 127)), 1)
+                write_with_uninst_info(shc, 0x3EC21, popularity[6], 4)
+                write_with_uninst_info(shc, 0x3EC2D, popularity[7], 4)
+                write_with_uninst_info(shc, 0x3EC39, popularity[8], 4)
+                write_with_uninst_info(shc, 0x3EC45, popularity[9], 4)
+                write_with_uninst_info(shc, 0x3EC56, popularity[10], 4)
+                write_with_uninst_info(shc, 0x3EC54, popularity[11]-popularity[10], 1)
+
+                write_with_uninst_info(shc, 0x5BC73, popularity[0], 4)
+                write_with_uninst_info(shc, 0x5BC7F, popularity[1], 4)
+                write_with_uninst_info(shc, 0x5BC8B, popularity[2], 4)
+                write_with_uninst_info(shc, 0x5BC97, popularity[3], 4)
+                write_with_uninst_info(shc, 0x5BCA3, popularity[4], 4)
+                write_with_uninst_info(shc, 0x5BCAF, popularity[5], 4)
+                write_with_uninst_info(shc, 0x5BCBB, popularity[6], 4)
+                write_with_uninst_info(shc, 0x5BCC7, popularity[7], 4)
+                write_with_uninst_info(shc, 0x5BCD3, popularity[8], 4)
+                write_with_uninst_info(shc, 0x5BCDF, popularity[9], 4)
+                write_with_uninst_info(shc, 0x5BCF0, popularity[10], 4)
+                write_with_uninst_info(shc, 0x5BCEE, popularity[11]-popularity[10], 1)
+            elif key == "neutral_tax_level":
+                neutral_level = taxation_rules[key]
+                write_with_uninst_info(shc, 0x3B09F, neutral_level, 1)
+                write_with_uninst_info(shc, 0x593A8, neutral_level, 1)
+                write_with_uninst_info(shc, 0x593E8, neutral_level, 1)
+                write_with_uninst_info(shc, 0x3ADCE, neutral_level, 1)
+                write_with_uninst_info(shc, 0x3EBC4, neutral_level, 1)
+                write_with_uninst_info(shc, 0x5BC5D, neutral_level, 1)
+                write_with_uninst_info(shc, 0x5C1AF, neutral_level, 1)
+                write_with_uninst_info(shc, 0x560C2, neutral_level, 4)
+                jump_addr_list = [0x3B0AE, 0x3B0BD, 0x3B0C9, 0x3B0D5, 0x3B0E1, 0x3B0ED,
+                                  0x3B0F9, 0x3B105, 0x3B111, 0x3B11D, 0x3B129, 0x3B133]
+                jump_distance = jump_addr_list[neutral_level] - 0x3b0A8 - 2
+                neutral_happiness = read(shc, jump_addr_list[neutral_level], 4)
+                write_with_uninst_info(shc, 0x3EBCF, neutral_happiness, 4)
+                write_with_uninst_info(shc, 0x5BC65, neutral_happiness, 4)
+                write_with_uninst_info(shc, 0x3b0A8, jump_distance, 1)
+            elif key == "advantage_multiplier":
+                advantage_multipliers = taxation_rules[key]
+                human_big_ai_medium = advantage_multipliers["human_big_ai_medium"]
+                ai_big = advantage_multipliers["ai_big"]
+                write_with_uninst_info(shc, 0x59326, human_big_ai_medium, 4)
+                write_with_uninst_info(shc, 0x592FA, ai_big, 4)
+
+
+def modify_fear_factor_rules(fear_factor_rules):
+    with open(exe_path, "r+b") as shc:
+        for key in fear_factor_rules:
+            if key == "popularity_per_good_level":
+                write_with_uninst_info(shc, 0x3F664, fear_factor_rules[key], 1)
+                write_with_uninst_info(shc, 0x3EDBC, fear_factor_rules[key], 1)
+                write_with_uninst_info(shc, 0x5BE5B, fear_factor_rules[key], 1)
+            elif key == "popularity_per_bad_level":
+                write_with_uninst_info(shc, 0x3F66E, fear_factor_rules[key], 1)
+                write_with_uninst_info(shc, 0x3EDC8, fear_factor_rules[key], 1)
+                write_with_uninst_info(shc, 0x5BE69, fear_factor_rules[key], 1)
+            elif key == "productivity":
+                productivity = key["productivity"]
+                write_with_uninst_info(shc, 0x590FF, productivity[0], 4)
+                write_with_uninst_info(shc, 0x5910C, productivity[1], 4)
+                write_with_uninst_info(shc, 0x59119, productivity[2], 4)
+                write_with_uninst_info(shc, 0x59126, productivity[3], 4)
+                write_with_uninst_info(shc, 0x59133, productivity[4], 4)
+                write_with_uninst_info(shc, 0x5913F, productivity[5], 4)
+                write_with_uninst_info(shc, 0x5914C, productivity[6], 4)
+                write_with_uninst_info(shc, 0x59159, productivity[7], 4)
+                write_with_uninst_info(shc, 0x59166, productivity[8], 4)
+                write_with_uninst_info(shc, 0x59179, productivity[9], 1)
+                write_with_uninst_info(shc, 0x5917C, productivity[10], 1)
+            elif key == "coverage":
+                write_with_uninst_info(shc, 0xB430, fear_factor_rules[key], 1)
+
+
 def enable_custom_taxation(tax_table):
     tax_jumpout_instructions = [
         0xE9, 0xDF, 0xB2, 0xFA, 0xFF,             # jmp Stronghold_Crusader_Extreme.exe+459B
@@ -439,6 +535,10 @@ def install_mod():
             modify_beer_rules(val)
         elif cfg == "food":
             modify_food_rules(val)
+        elif cfg == "fear_factor":
+            modify_fear_factor_rules(val)
+        elif cfg == "taxation":
+            modify_taxation_rules(val)
         elif cfg == "special":
             for key, change in val.items():
                 if not ("special" in uninstall):
