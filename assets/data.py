@@ -230,9 +230,8 @@ unit_melee_dmg_base = 0x74f134
 
 resource_buy_base = 0x217358
 resource_sell_base = 0x2173c0
-
-scenario_pgr_base = 0x6B8FAC
-scenario_pgr_crowded_base = 0x6B9004
+scenario_pgr_base = 0x6B8FA8
+scenario_pgr_crowded_base = 0x6B9000
 skirmish_pgr_base = 0x6B9058
 
 popularity_thresholds = [str(x) for x in range(0, 101, 5)]

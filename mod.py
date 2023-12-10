@@ -31,6 +31,98 @@ def apply_aob_as_patch(address, array):
                 shc.write(int(str(elem)).to_bytes(1, byteorder='little'))
 
 
+def modify_building_stats(buildings):
+    with open(exe_path, "r+b") as shc:
+        size = 4
+        for key in buildings:
+            current_building = buildings[key]
+
+            if "cost" in current_building.keys():
+                address = get_building_cost_address(key)
+
+                for cost in current_building["cost"]:
+                    write_with_uninst_info(shc, address, cost, size)
+                    address += size
+
+            if "health" in current_building.keys():
+                address = get_building_health_address(key)
+                write_with_uninst_info(shc, address, current_building["health"], size)
+
+            if "housing" in current_building.keys():
+                address = get_building_population_address(key)
+                write_with_uninst_info(shc, address, current_building["housing"], size)
+
+
+def modify_unit_stats(units):
+    with open(exe_path, "r+b") as shc:
+        size = 4
+        for key in units:
+            current_unit = units[key]
+
+            if "health" in current_unit.keys():
+                address = get_unit_health_address(key)
+                write_with_uninst_info(shc, address, current_unit["health"], size)
+
+            if "arrowDamage" in current_unit.keys():
+                address = get_unit_arrow_dmg_address(key)
+                write_with_uninst_info(shc, address, current_unit["arrowDamage"], size)
+
+            if "xbowDamage" in current_unit.keys():
+                address = get_unit_xbow_dmg_address(key)
+                write_with_uninst_info(shc, address, current_unit["xbowDamage"], size)
+
+            if "stoneDamage" in current_unit.keys():
+                address = get_unit_stone_dmg_address(key)
+                write_with_uninst_info(shc, address, current_unit["stoneDamage"], size)
+
+            if "baseMeleeDamage" in current_unit.keys():
+                for defender in unit_names:
+                    address = get_unit_melee_dmg_address(key, defender)
+                    write_with_uninst_info(shc, address, current_unit["baseMeleeDamage"], size)
+
+            if "meleeDamageVs" in current_unit.keys():
+                for defender in current_unit["meleeDamageVs"]:
+                    address = get_unit_melee_dmg_address(key, defender)
+                    write_with_uninst_info(shc, address, current_unit["meleeDamageVs"][defender], size)
+
+
+def modify_trade_costs(resources):
+    with open(exe_path, "r+b") as shc:
+        size = 4
+        for key in resources:
+            current_resource = resources[key]
+
+            if "buy" in current_resource.keys():
+                address = get_resource_buy_address(key)
+                write_with_uninst_info(shc, address, current_resource["buy"], size)
+
+            if "sell" in current_resource.keys():
+                address = get_resource_sell_address(key)
+                write_with_uninst_info(shc, address, current_resource["sell"], size)
+
+
+def modify_population_gathering_rate(gathering_rates):
+    with open(exe_path, "r+b") as shc:
+        size = 4
+        for pgr in gathering_rates:
+            current_pgr = gathering_rates[pgr]
+
+            if pgr == "Skirmish":
+                for threshold in current_pgr:
+                    address = get_skirmish_pgr_address(threshold)
+                    write_with_uninst_info(shc, address, current_pgr[threshold], size)
+
+            if pgr == "Scenario_lt_100":
+                for threshold in current_pgr:
+                    address = get_scenario_pgr_address(threshold)
+                    write_with_uninst_info(shc, address, current_pgr[threshold], size)
+
+            if pgr == "Scenario_gt_100":
+                for threshold in current_pgr:
+                    address = get_scenario_pgr_crowded_address(threshold)
+                    write_with_uninst_info(shc, address, current_pgr[threshold], size)
+
+
 def modify_religion_rules(religion_rules):
     with open(exe_path, "r+b") as shc:
         for key in religion_rules:
@@ -163,98 +255,6 @@ def modify_food_rules(food_rules):
                 write_with_uninst_info(shc, 0x5BBB9, variety_bonuses[0], 1)
                 write_with_uninst_info(shc, 0x5BBC3, variety_bonuses[1], 1)
                 write_with_uninst_info(shc, 0x5BB4D, variety_bonuses[2], 1)
-
-
-def modify_building_stats(buildings):
-    with open(exe_path, "r+b") as shc:
-        size = 4
-        for key in buildings:
-            current_building = buildings[key]
-
-            if "cost" in current_building.keys():
-                address = get_building_cost_address(key)
-
-                for cost in current_building["cost"]:
-                    write_with_uninst_info(shc, address, cost, size)
-                    address += size
-
-            if "health" in current_building.keys():
-                address = get_building_health_address(key)
-                write_with_uninst_info(shc, address, current_building["health"], size)
-
-            if "housing" in current_building.keys():
-                address = get_building_population_address(key)
-                write_with_uninst_info(shc, address, current_building["housing"], size)
-
-
-def modify_unit_stats(units):
-    with open(exe_path, "r+b") as shc:
-        size = 4
-        for key in units:
-            current_unit = units[key]
-
-            if "health" in current_unit.keys():
-                address = get_unit_health_address(key)
-                write_with_uninst_info(shc, address, current_unit["health"], size)
-
-            if "arrowDamage" in current_unit.keys():
-                address = get_unit_arrow_dmg_address(key)
-                write_with_uninst_info(shc, address, current_unit["arrowDamage"], size)
-
-            if "xbowDamage" in current_unit.keys():
-                address = get_unit_xbow_dmg_address(key)
-                write_with_uninst_info(shc, address, current_unit["xbowDamage"], size)
-
-            if "stoneDamage" in current_unit.keys():
-                address = get_unit_stone_dmg_address(key)
-                write_with_uninst_info(shc, address, current_unit["stoneDamage"], size)
-
-            if "baseMeleeDamage" in current_unit.keys():
-                for defender in unit_names:
-                    address = get_unit_melee_dmg_address(key, defender)
-                    write_with_uninst_info(shc, address, current_unit["baseMeleeDamage"], size)
-
-            if "meleeDamageVs" in current_unit.keys():
-                for defender in current_unit["meleeDamageVs"]:
-                    address = get_unit_melee_dmg_address(key, defender)
-                    write_with_uninst_info(shc, address, current_unit["meleeDamageVs"][defender], size)
-
-
-def modify_trade_costs(resources):
-    with open(exe_path, "r+b") as shc:
-        size = 4
-        for key in resources:
-            current_resource = resources[key]
-
-            if "buy" in current_resource.keys():
-                address = get_resource_buy_address(key)
-                write_with_uninst_info(shc, address, current_resource["buy"], size)
-
-            if "sell" in current_resource.keys():
-                address = get_resource_sell_address(key)
-                write_with_uninst_info(shc, address, current_resource["sell"], size)
-
-
-def modify_population_gathering_rate(gathering_rates):
-    with open(exe_path, "r+b") as shc:
-        size = 4
-        for pgr in gathering_rates:
-            current_pgr = gathering_rates[pgr]
-
-            if pgr == "Skirmish":
-                for threshold in current_pgr:
-                    address = get_skirmish_pgr_address(threshold)
-                    write_with_uninst_info(shc, address, current_pgr[threshold], size)
-
-            if pgr == "Scenario_lt_100":
-                for threshold in current_pgr:
-                    address = get_scenario_pgr_address(threshold)
-                    write_with_uninst_info(shc, address, current_pgr[threshold], size)
-
-            if pgr == "Scenario_gt_100":
-                for threshold in current_pgr:
-                    address = get_scenario_pgr_crowded_address(threshold)
-                    write_with_uninst_info(shc, address, current_pgr[threshold], size)
 
 
 def install_tax_reset_feature(reset_value):
