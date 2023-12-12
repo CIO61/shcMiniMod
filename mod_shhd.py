@@ -5,11 +5,11 @@ import argparse
 import sys
 import ctypes
 
-from assets.data_shde import (get_building_cost_address, get_building_health_address, get_building_population_address,
-                    get_unit_health_address, get_unit_arrow_dmg_address, get_unit_xbow_dmg_address,
-                    get_unit_stone_dmg_address, get_resource_buy_address, get_resource_sell_address,
-                    get_scenario_pgr_address, get_scenario_pgr_crowded_address,
-                    get_skirmish_pgr_address, get_unit_melee_dmg_address, read, write, unit_names)
+from assets.data_shhd import (get_building_cost_address, get_building_health_address, get_building_population_address,
+                              get_unit_health_address, get_unit_arrow_dmg_address, get_unit_xbow_dmg_address,
+                              get_unit_stone_dmg_address, get_resource_buy_address, get_resource_sell_address,
+                              get_scenario_pgr_address, get_scenario_pgr_crowded_address,
+                              get_skirmish_pgr_address, get_unit_melee_dmg_address, read, write, unit_names)
 
 
 def write_with_uninst_info(shc, address, value, size):

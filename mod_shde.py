@@ -6,10 +6,10 @@ import sys
 import ctypes
 
 from assets.data_shde import (get_building_cost_address, get_building_health_address, get_building_population_address,
-                    get_unit_health_address, get_unit_arrow_dmg_address, get_unit_xbow_dmg_address,
-                    get_unit_stone_dmg_address, get_resource_buy_address, get_resource_sell_address,
-                    get_scenario_pgr_address, get_scenario_pgr_crowded_address,
-                    get_skirmish_pgr_address, get_unit_melee_dmg_address, read, write, unit_names)
+                              get_unit_health_address, get_unit_arrow_dmg_address, get_unit_xbow_dmg_address,
+                              get_unit_stone_dmg_address, get_resource_buy_address, get_resource_sell_address,
+                              get_scenario_pgr_address, get_scenario_pgr_crowded_address,
+                              get_skirmish_pgr_address, get_unit_melee_dmg_address, read, write, unit_names)
 
 
 def write_with_uninst_info(shc, address, value, size):
@@ -456,29 +456,29 @@ def install_mod():
             modify_trade_costs(val)
         elif cfg == "population_gathering_rate":
             modify_population_gathering_rate(val)
-        elif cfg == "religion":
-            modify_religion_rules(val)
-        elif cfg == "beer":
-            modify_beer_rules(val)
-        elif cfg == "food":
-            modify_food_rules(val)
-        elif cfg == "fear_factor":
-            modify_fear_factor_rules(val)
-        elif cfg == "taxation":
-            modify_taxation_rules(val)
-        elif cfg == "special":
-            for key, change in val.items():
-                if not ("special" in uninstall):
-                    uninstall["special"] = {}
-
-                if key == "custom_taxation":
-                    uninstall["special"]["custom_taxation"] = copy.deepcopy(change)
-                    tax_table = change["table"]
-                    enable_custom_taxation(tax_table)
-                elif key == "custom_combat_bonus":
-                    uninstall["special"]["custom_combat_bonus"] = copy.deepcopy(change)
-                    damage_table = change["table"]
-                    enable_custom_combat_bonus(damage_table)
+        # elif cfg == "religion":
+        #     modify_religion_rules(val)
+        # elif cfg == "beer":
+        #     modify_beer_rules(val)
+        # elif cfg == "food":
+        #     modify_food_rules(val)
+        # elif cfg == "fear_factor":
+        #     modify_fear_factor_rules(val)
+        # elif cfg == "taxation":
+        #     modify_taxation_rules(val)
+        # elif cfg == "special":
+        #     for key, change in val.items():
+        #         if not ("special" in uninstall):
+        #             uninstall["special"] = {}
+        #
+        #         if key == "custom_taxation":
+        #             uninstall["special"]["custom_taxation"] = copy.deepcopy(change)
+        #             tax_table = change["table"]
+        #             enable_custom_taxation(tax_table)
+        #         elif key == "custom_combat_bonus":
+        #             uninstall["special"]["custom_combat_bonus"] = copy.deepcopy(change)
+        #             damage_table = change["table"]
+        #             enable_custom_combat_bonus(damage_table)
 
         elif cfg == "other":
             with open(dll_path, "r+b") as shc:
