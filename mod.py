@@ -422,7 +422,7 @@ def modify_fear_factor_rules(fear_factor_rules):
                 write_with_uninst_info(shc, 0x5914C, productivity[6], 4)
                 write_with_uninst_info(shc, 0x59159, productivity[7], 4)
                 write_with_uninst_info(shc, 0x59166, productivity[8], 4)
-                write_with_uninst_info(shc, 0x59179, productivity[9], 1)
+                write_with_uninst_info(shc, 0x59179, productivity[9]-productivity[10], 1)
                 write_with_uninst_info(shc, 0x5917C, productivity[10], 1)
             elif key == "coverage":
                 write_with_uninst_info(shc, 0xB430, fear_factor_rules[key], 1)
