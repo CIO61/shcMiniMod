@@ -86,19 +86,53 @@ def modify_unit_stats(units):
                     write_with_uninst_info(shc, address, current_unit["meleeDamageVs"][defender], size)
 
 
-def modify_trade_costs(resources):
+def modify_resources(resources):
     with open(exe_path, "r+b") as shc:
         size = 4
-        for key in resources:
-            current_resource = resources[key]
+        for resource in resources:
+            res_data = resources[resource]
 
-            if "buy" in current_resource.keys():
-                address = get_resource_buy_address(key)
-                write_with_uninst_info(shc, address, current_resource["buy"], size)
+            if "buy" in res_data.keys():
+                address = get_resource_buy_address(resource)
+                write_with_uninst_info(shc, address, res_data["buy"], size)
 
-            if "sell" in current_resource.keys():
-                address = get_resource_sell_address(key)
-                write_with_uninst_info(shc, address, current_resource["sell"], size)
+            if "sell" in res_data.keys():
+                address = get_resource_sell_address(resource)
+                write_with_uninst_info(shc, address, res_data["sell"], size)
+
+            if "baseDelivery" in res_data.keys():
+                resource_addr_map = {
+                    "Wood": "0x14D60E",
+                    "Stone": "0x1513E4",
+                    "Iron": "0x16672E",
+                    "Pitch": "0x15219E",
+                    "Meat": "0x1506A8",
+                    "Apple": "0x154591",
+                    "Cheese": "0x154D44",
+                    "Bread": "0x156383",
+                    "Wheat": "0x152F6E",
+                    "Hops": "0x153AE6",
+                }
+                if resource in resource_addr_map.keys():
+                    write_with_uninst_info(shc, resource_addr_map[resource], res_data["baseDelivery"], 1)
+                else:
+                    errors.append(f"Delivery modification for {resource} is not supported!")
+
+            if "skirmishBonus" in res_data.keys():
+                bonus_addr_map = {
+                    "Wood": "0x14D605",
+                    "Stone": "0x1513E2",
+                    "Iron": "0x166726",
+                    "Pitch": "0x152195",
+                    "Hops": "0x153AE2",
+                    "Meat": "0x15069F",
+                    "Apple": "0x15458F",
+                    "Cheese": "0x154D3B"
+                }
+                if resource in bonus_addr_map.keys():
+                    write_with_uninst_info(shc, bonus_addr_map[resource], int(res_data["skirmishBonus"]), 1)
+                else:
+                    errors.append(f"Production bonus modification for {resource} is not supported!")
 
 
 def modify_population_gathering_rate(gathering_rates):
@@ -264,9 +298,8 @@ def install_tax_reset_feature(reset_value):
         original_section_count = int.from_bytes(shc.read(1), byteorder='little')
 
     if original_section_count != 5:
-        ctypes.windll.user32.MessageBoxW(0, "Error UCP not installed, tax_reset change failed",
-                                         "Tax change install error", 0)
-        sys.exit(1)
+        errors.append("Error UCP not installed, tax_reset change is not applied.")
+        return
 
     # Increase image size to accommodate for extra code
     with open(exe_path, "r+b") as shc:
@@ -526,7 +559,7 @@ def install_mod():
         elif cfg == "units":
             modify_unit_stats(val)
         elif cfg == "resources":
-            modify_trade_costs(val)
+            modify_resources(val)
         elif cfg == "population_gathering_rate":
             modify_population_gathering_rate(val)
         elif cfg == "religion":
@@ -620,6 +653,7 @@ if __name__ == "__main__":
                       help="Create uninstall.json to be able to revert changes later.")
 
     settings = argp.parse_args()
+    errors = []
     if settings.gamepath:
         gamedir = os.path.abspath(settings.gamepath)
     else:
@@ -644,3 +678,6 @@ if __name__ == "__main__":
         uninstall_mod()
     else:
         install_mod()
+
+    if errors:
+        ctypes.windll.user32.MessageBoxW(0, "\n".join(errors), "Errors occured in installation", 0)

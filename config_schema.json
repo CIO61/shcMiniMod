@@ -305,6 +305,12 @@
             },
             "sell": {
               "$ref": "#/$defs/numeric_string"
+            },
+            "baseDelivery": {
+              "$ref": "#/$defs/numeric_string"
+            },
+            "skirmishBonus": {
+              "type": "boolean"
             }
           }
         }
