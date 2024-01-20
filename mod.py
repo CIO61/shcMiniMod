@@ -100,39 +100,54 @@ def modify_resources(resources):
                 address = get_resource_sell_address(resource)
                 write_with_uninst_info(shc, address, res_data["sell"], size)
 
-            if "baseDelivery" in res_data.keys():
-                resource_addr_map = {
-                    "Wood": "0x14D60E",
-                    "Stone": "0x1513E4",
-                    "Iron": "0x16672E",
-                    "Pitch": "0x15219E",
-                    "Meat": "0x1506A8",
-                    "Apple": "0x154591",
-                    "Cheese": "0x154D44",
-                    "Bread": "0x156383",
-                    "Wheat": "0x152F6E",
-                    "Hops": "0x153AE6",
-                }
-                if resource in resource_addr_map.keys():
-                    write_with_uninst_info(shc, resource_addr_map[resource], res_data["baseDelivery"], 1)
-                else:
-                    errors.append(f"Delivery modification for {resource} is not supported!")
+            if resource == "Leather" and any(["baseDelivery" in res_data.keys(), "skirmishBonus" in res_data.keys()]):
+                leather_base_delivery = res_data.get("baseDelivery", 1)
+                leather_skirmish_bonus = int(res_data.get("skirmishBonus", 1))
+                apply_aob_as_patch(0x15A52E, [
+                    0x6A, leather_skirmish_bonus,
+                    0x6A, leather_base_delivery,
+                    0xE9, 0x41, 0xAB, 0xEA, 0xFF,
+                    0x90
+                ])
 
-            if "skirmishBonus" in res_data.keys():
-                bonus_addr_map = {
-                    "Wood": "0x14D605",
-                    "Stone": "0x1513E2",
-                    "Iron": "0x166726",
-                    "Pitch": "0x152195",
-                    "Hops": "0x153AE2",
-                    "Meat": "0x15069F",
-                    "Apple": "0x15458F",
-                    "Cheese": "0x154D3B"
-                }
-                if resource in bonus_addr_map.keys():
-                    write_with_uninst_info(shc, bonus_addr_map[resource], int(res_data["skirmishBonus"]), 1)
-                else:
-                    errors.append(f"Production bonus modification for {resource} is not supported!")
+                apply_aob_as_patch(0x5078, [
+                    0x66, 0x89, 0xAE, 0x04, 0xDC, 0x45, 0x01,
+                    0xE9, 0xB4, 0x54, 0x15, 0x00
+                ])
+            else:
+                if "baseDelivery" in res_data.keys():
+                    resource_addr_map = {
+                        "Wood": "0x14D60E",
+                        "Stone": "0x1513E4",
+                        "Iron": "0x16672E",
+                        "Pitch": "0x15219E",
+                        "Meat": "0x1506A8",
+                        "Apple": "0x154591",
+                        "Cheese": "0x154D44",
+                        "Bread": "0x156383",
+                        "Wheat": "0x152F6E",
+                        "Hops": "0x153AE6",
+                    }
+                    if resource in resource_addr_map.keys():
+                        write_with_uninst_info(shc, resource_addr_map[resource], res_data["baseDelivery"], 1)
+                    else:
+                        errors.append(f"Delivery modification for {resource} is not supported!")
+
+                if "skirmishBonus" in res_data.keys():
+                    bonus_addr_map = {
+                        "Wood": "0x14D605",
+                        "Stone": "0x1513E2",
+                        "Iron": "0x166726",
+                        "Pitch": "0x152195",
+                        "Hops": "0x153AE2",
+                        "Meat": "0x15069F",
+                        "Apple": "0x15458F",
+                        "Cheese": "0x154D3B"
+                    }
+                    if resource in bonus_addr_map.keys():
+                        write_with_uninst_info(shc, bonus_addr_map[resource], int(res_data["skirmishBonus"]), 1)
+                    else:
+                        errors.append(f"Production bonus modification for {resource} is not supported!")
 
 
 def modify_population_gathering_rate(gathering_rates):
