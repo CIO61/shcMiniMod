@@ -128,7 +128,7 @@ def modify_resources(resources):
                         "Cheese": 0x154D44,
                         "Bread": 0x156383,
                         "Wheat": 0x152F6E,
-                        "Hops": 0x153AE6
+                        "Hop": 0x153AE6
                     }
                     if resource in resource_addr_map.keys():
                         write_with_uninst_info(shc, resource_addr_map[resource], res_data["baseDelivery"], 1)
@@ -141,7 +141,7 @@ def modify_resources(resources):
                         "Stone": 0x1513E2,
                         "Iron": 0x166726,
                         "Pitch": 0x152195,
-                        "Hops": 0x153AE2,
+                        "Hop": 0x153AE2,
                         "Meat": 0x15069F,
                         "Apple": 0x15458F,
                         "Cheese": 0x154D3B
