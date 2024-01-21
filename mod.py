@@ -108,8 +108,8 @@ def modify_resources(resources):
                 apply_aob_as_patch(0x15A52E, [
                     0x6A, leather_skirmish_bonus,
                     0x6A, leather_base_delivery,
-                    0xE9, 0x41, 0xAB, 0xEA, 0xFF,
-                    0x90
+                    0x50,
+                    0xE9, 0x40, 0xAB, 0xEA, 0xFF
                 ])
 
                 apply_aob_as_patch(0x5078, [
