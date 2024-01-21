@@ -13,6 +13,8 @@ from assets import (get_building_cost_address, get_building_health_address, get_
 
 
 def write_with_uninst_info(shc, address, value, size):
+    if str(size) not in uninstall.keys():
+        uninstall[str(size)] = {}
     if str(address) not in uninstall[str(size)]:
         uninstall[str(size)][str(address)] = read(shc, address, size)
     write(shc, address, value, size)
@@ -460,7 +462,7 @@ def modify_fear_factor_rules(fear_factor_rules):
                 write_with_uninst_info(shc, 0x3EDC8, fear_factor_rules[key], 1)
                 write_with_uninst_info(shc, 0x5BE69, fear_factor_rules[key], 1)
             elif key == "productivity":
-                productivity = key["productivity"]
+                productivity = fear_factor_rules["productivity"]
                 write_with_uninst_info(shc, 0x590FF, productivity[0], 4)
                 write_with_uninst_info(shc, 0x5910C, productivity[1], 4)
                 write_with_uninst_info(shc, 0x59119, productivity[2], 4)
