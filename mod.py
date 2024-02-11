@@ -476,6 +476,9 @@ def modify_fear_factor_rules(fear_factor_rules):
                 write_with_uninst_info(shc, 0x5917C, productivity[10], 1)
             elif key == "coverage":
                 write_with_uninst_info(shc, 0xB430, fear_factor_rules[key], 1)
+                write_with_uninst_info(shc, 0xB431, 0x90, 1)
+                write_with_uninst_info(shc, 0xB432, 0x90, 1)
+                write_with_uninst_info(shc, 0xB433, 0x90, 1)
 
 
 def enable_custom_taxation(tax_table):
