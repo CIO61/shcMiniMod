@@ -482,7 +482,7 @@ def modify_fear_factor_rules(fear_factor_rules):
                 write_with_uninst_info(shc, 0x5917C, productivity[10], 1)
             elif key == "coverage":
                 coverage_val = fear_factor_rules[key]
-                apply_aob_as_patch(0xB430,[
+                apply_aob_as_patch(0xB42E,[
                     0xE9, 0xB7, 0x91, 0xFF, 0xFF,  # jump out to 4045EA
                     0x41  # inc ecx
                 ])
