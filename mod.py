@@ -442,6 +442,12 @@ def modify_taxation_rules(taxation_rules):
                 write_with_uninst_info(shc, 0x3EBCF, neutral_happiness, 4)
                 write_with_uninst_info(shc, 0x5BC65, neutral_happiness, 4)
                 write_with_uninst_info(shc, 0x3b0A8, jump_distance, 1)
+            elif key == "gold_gain":
+                if not ("special" in uninstall):
+                    uninstall["special"] = {}
+                uninstall["special"]["custom_taxation"] = True
+                tax_table = taxation_rules[key]
+                enable_custom_taxation(tax_table)
             elif key == "advantage_multiplier":
                 advantage_multipliers = taxation_rules[key]
                 human_big_ai_medium = advantage_multipliers["human_big_ai_medium"]
@@ -475,10 +481,24 @@ def modify_fear_factor_rules(fear_factor_rules):
                 write_with_uninst_info(shc, 0x59179, productivity[9]-productivity[10], 1)
                 write_with_uninst_info(shc, 0x5917C, productivity[10], 1)
             elif key == "coverage":
-                write_with_uninst_info(shc, 0xB430, fear_factor_rules[key], 1)
-                write_with_uninst_info(shc, 0xB431, 0x90, 1)
-                write_with_uninst_info(shc, 0xB432, 0x90, 1)
-                write_with_uninst_info(shc, 0xB433, 0x90, 1)
+                coverage_val = fear_factor_rules[key]
+                apply_aob_as_patch(0xB430,[
+                    0xE9, 0xB7, 0x91, 0xFF, 0xFF,  # jump out to 4045EA
+                    0x41  # inc ecx
+                ])
+                apply_aob_as_patch(0x45EA, [
+                    0x85, 0xC9,  # test ecx, ecx
+                    0x74, 0x01,  # jn by one
+                    0x49,  # dec ecx
+                    0xC1, 0xF9, coverage_val,  # sar ecx, coverage_value
+                    0xE9, 0x3C, 0x6E, 0x00, 0x00  # jump back to inc ecx
+                ])
+            elif key == "combat_bonus":
+                if not ("special" in uninstall):
+                    uninstall["special"] = {}
+                uninstall["special"]["custom_combat_bonus"] = True
+                damage_table = fear_factor_rules[key]
+                enable_custom_combat_bonus(damage_table)
 
 
 def enable_custom_taxation(tax_table):
@@ -601,14 +621,6 @@ def install_mod():
                     uninstall["special"]["tax_reset"] = copy.deepcopy(change)
                     reset_value = change["value"]
                     install_tax_reset_feature(reset_value)
-                elif key == "custom_taxation":
-                    uninstall["special"]["custom_taxation"] = copy.deepcopy(change)
-                    tax_table = change["table"]
-                    enable_custom_taxation(tax_table)
-                elif key == "custom_combat_bonus":
-                    uninstall["special"]["custom_combat_bonus"] = copy.deepcopy(change)
-                    damage_table = change["table"]
-                    enable_custom_combat_bonus(damage_table)
                 elif key == "assassin_rally_speed":
                     uninstall["special"]["assassin_rally_speed"] = copy.deepcopy(change)
                     speed = change["value"] & 0xF
