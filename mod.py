@@ -442,7 +442,7 @@ def modify_taxation_rules(taxation_rules):
                 write_with_uninst_info(shc, 0x3EBCF, neutral_happiness, 4)
                 write_with_uninst_info(shc, 0x5BC65, neutral_happiness, 4)
                 write_with_uninst_info(shc, 0x3b0A8, jump_distance, 1)
-            elif key == "gold_gain":
+            elif key == "gold":
                 if not ("special" in uninstall):
                     uninstall["special"] = {}
                 uninstall["special"]["custom_taxation"] = True
