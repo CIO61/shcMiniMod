@@ -476,14 +476,14 @@ def enable_custom_taxation(shc, tax_table):
 
     bribe_jumpout_instructions = [
         0xE8, 0x26, 0xB2, 0xFA, 0xFF,  # call 40459B
-        0xEB, 0x04,                    # jump over 2 bytes
-        0x90, 0x90,
+        0xEB, 0x04,                    # jump over 4 bytes
+        0x90, 0x90, 0x90, 0x90,
         0xC1, 0xF8, 0x02               # sar eax,02
     ]
     apply_aob_as_patch(0x59370, bribe_jumpout_instructions)
 
     custom_tax_instructions = [
-        0x88, 0x44, 0x24, 0x0C,                          # mov eax [esp+0C]
+        0x8A, 0x44, 0x24, 0x0C,                          # mov eax [esp+0C]
         0x66, 0x8B, 0x04, 0x45, 0xAD, 0x45, 0x40, 0x00,  # mov ax,[eax*2+Stronghold_Crusader_Extreme.exe+45AD]
         0x0F, 0xAF, 0x44, 0x24, 0x10,                    # imul eax,[esp+10]
         0xC3                                             # return
