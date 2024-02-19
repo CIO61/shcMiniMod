@@ -412,9 +412,6 @@ def modify_taxation_rules(taxation_rules):
                 write_with_uninst_info(shc, 0x5BCF0, popularity[10], 4)
                 write_with_uninst_info(shc, 0x5BCEE, popularity[11]-popularity[10], 1)
             elif key == "gold":
-                if not ("special" in uninstall):
-                    uninstall["special"] = {}
-                uninstall["special"]["custom_taxation"] = True
                 tax_table = taxation_rules[key]
                 enable_custom_taxation(shc, tax_table)
             elif key == "advantage_multiplier":
@@ -463,28 +460,23 @@ def modify_fear_factor_rules(fear_factor_rules):
                     0xE9, 0x3C, 0x6E, 0x00, 0x00  # jump back to inc ecx
                 ])
             elif key == "combat_bonus":
-                if not ("special" in uninstall):
-                    uninstall["special"] = {}
-                uninstall["special"]["custom_combat_bonus"] = True
                 damage_table = fear_factor_rules[key]
                 enable_custom_combat_bonus(damage_table)
 
 
 def enable_custom_taxation(shc, tax_table):
     tax_jumpout_instructions = [
-        0xB8, 0x9B, 0x45, 0x40, 0x00,             # mov eax, 40459B
-        0xFF, 0xD0,                               # call eax
-        0xEB, 0x05,                               # jump over 5 bytes
-        0x90, 0x90, 0x90, 0x90, 0x90,
+        0xE8, 0xE6, 0xB2, 0xFA, 0xFF,             # call 40459B
+        0xEB, 0x07,                               # jump over 7 bytes
+        0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
         0xC1, 0xF8, 0x03,                         # sar eax,03
         0x83, 0x3D, 0xF0, 0x4D, 0x35, 0x02, 0x00  # cmp dword ptr [Stronghold_Crusader_Extreme.exe+1F54DF0],00
     ]
     apply_aob_as_patch(0x592B0, tax_jumpout_instructions)
 
     bribe_jumpout_instructions = [
-        0xB8, 0x9B, 0x45, 0x40, 0x00,  # mov eax, 40459B
-        0xFF, 0xD0,                    # call eax
-        0xEB, 0x02,                    # jump over 2 bytes
+        0xE8, 0x26, 0xB2, 0xFA, 0xFF,  # call 40459B
+        0xEB, 0x04,                    # jump over 2 bytes
         0x90, 0x90,
         0xC1, 0xF8, 0x02               # sar eax,02
     ]
@@ -520,21 +512,20 @@ def enable_custom_taxation(shc, tax_table):
 
 def enable_custom_combat_bonus(damage_table):
     combat_jumpout_instructions = [
-        0xB9, 0xC6, 0x45, 0x40, 0x00,  # mov ecx 4045C6
-        0xFF, 0xD1,                    # call ecx
-        0xEB, 0x02, 0x90, 0x90         # jump over 2 nop nop
+        0x31, 0xC9,  # xor ecx, ecx
+        0xE9, 0xA1, 0x2F, 0xED, 0xFF,  # jmp 4045C8 (45C8)
+        0x90, 0x90, 0x90, 0x90  # nop nop nop nop
     ]
     apply_aob_as_patch(0x131620, combat_jumpout_instructions)
 
     custom_combat_instructions = [
-        0x31, 0xC9,                          # xor ecx, ecx
-        0x8A, 0x88, 0xD9, 0x45, 0x40, 0x00,  # mov cl,[eax+004045D9]
-        0x0F, 0xAF, 0x4C, 0x24, 0x08,        # imul ecx,[esp+08]
-        0xC3                                 # return
+        0x8A, 0x88, 0xDD, 0x45, 0x40, 0x00,  # mov cl,[eax+004045DD]
+        0x0F, 0xAF, 0x4C, 0x24, 0x04,  # imul ecx,[esp+04]
+        0xE9, 0x53, 0xD0, 0x12, 0x00  # jmp 0053162B
     ]
-    apply_aob_as_patch(0x45C6, custom_combat_instructions)
+    apply_aob_as_patch(0x45C8, custom_combat_instructions)
 
-    apply_aob_as_patch(0x45D4, damage_table)
+    apply_aob_as_patch(0x45D8, damage_table)
 
 
 def install_mod():
