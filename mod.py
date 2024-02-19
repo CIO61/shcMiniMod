@@ -425,29 +425,12 @@ def modify_taxation_rules(taxation_rules):
                 write_with_uninst_info(shc, 0x5BCDF, popularity[9], 4)
                 write_with_uninst_info(shc, 0x5BCF0, popularity[10], 4)
                 write_with_uninst_info(shc, 0x5BCEE, popularity[11]-popularity[10], 1)
-            elif key == "neutral_tax_level":
-                neutral_level = taxation_rules[key]
-                write_with_uninst_info(shc, 0x3B09F, neutral_level, 1)
-                write_with_uninst_info(shc, 0x593A8, neutral_level, 1)
-                write_with_uninst_info(shc, 0x593E8, neutral_level, 1)
-                write_with_uninst_info(shc, 0x3ADCE, neutral_level, 1)
-                write_with_uninst_info(shc, 0x3EBC4, neutral_level, 1)
-                write_with_uninst_info(shc, 0x5BC5D, neutral_level, 1)
-                write_with_uninst_info(shc, 0x5C1AF, neutral_level, 1)
-                write_with_uninst_info(shc, 0x560C2, neutral_level, 4)
-                jump_addr_list = [0x3B0AE, 0x3B0BD, 0x3B0C9, 0x3B0D5, 0x3B0E1, 0x3B0ED,
-                                  0x3B0F9, 0x3B105, 0x3B111, 0x3B11D, 0x3B129, 0x3B133]
-                jump_distance = jump_addr_list[neutral_level] - 0x3b0A8 - 2
-                neutral_happiness = read(shc, jump_addr_list[neutral_level], 4)
-                write_with_uninst_info(shc, 0x3EBCF, neutral_happiness, 4)
-                write_with_uninst_info(shc, 0x5BC65, neutral_happiness, 4)
-                write_with_uninst_info(shc, 0x3b0A8, jump_distance, 1)
             elif key == "gold":
                 if not ("special" in uninstall):
                     uninstall["special"] = {}
                 uninstall["special"]["custom_taxation"] = True
                 tax_table = taxation_rules[key]
-                enable_custom_taxation(tax_table)
+                enable_custom_taxation(shc, tax_table)
             elif key == "advantage_multiplier":
                 advantage_multipliers = taxation_rules[key]
                 human_big_ai_medium = advantage_multipliers["human_big_ai_medium"]
@@ -501,52 +484,67 @@ def modify_fear_factor_rules(fear_factor_rules):
                 enable_custom_combat_bonus(damage_table)
 
 
-def enable_custom_taxation(tax_table):
+def enable_custom_taxation(shc, tax_table):
     tax_jumpout_instructions = [
-        0xE9, 0xDF, 0xB2, 0xFA, 0xFF,             # jmp Stronghold_Crusader_Extreme.exe+459B
-        0x90, 0x90,                               # nop nop
-        0xC1, 0xF8, 0x03,                         # sar eax,02 { 2 }
+        0xB8, 0x9B, 0x45, 0x40, 0x00,             # mov eax, 40459B
+        0xFF, 0xD0,                               # call eax
+        0xEB, 0x05,                               # jump over 5 bytes
+        0x90, 0x90, 0x90, 0x90, 0x90,
+        0xC1, 0xF8, 0x03,                         # sar eax,03
         0x83, 0x3D, 0xF0, 0x4D, 0x35, 0x02, 0x00  # cmp dword ptr [Stronghold_Crusader_Extreme.exe+1F54DF0],00
     ]
-    apply_aob_as_patch(0x592B7, tax_jumpout_instructions)
-
-    custom_tax_instructions = [
-        0x8A, 0x80, 0xBB, 0x45, 0x40, 0x00,  # mov al,[eax+Stronghold_Crusader_Extreme.exe+45BB]
-        0x0F, 0xAF, 0x44, 0x24, 0x0C,        # imul eax,[esp+0C]
-        0xE9, 0x13, 0x4D, 0x05, 0x00,        # jmp Stronghold_Crusader_Extreme.exe+5937C
-    ]
-    apply_aob_as_patch(0x459B, custom_tax_instructions)
+    apply_aob_as_patch(0x592B0, tax_jumpout_instructions)
 
     bribe_jumpout_instructions = [
-        0x8B, 0x44, 0x24, 0x08,        # mov eax,[esp+08]
-        0xE9, 0x32, 0xB2, 0xFA, 0xFF,  # jmp Stronghold_Crusader_Extreme.exe+45AB
-        0x90, 0x90,                    # nop nop
-        0xC1, 0xF8, 0x02               # sar eax,01
+        0xB8, 0x9B, 0x45, 0x40, 0x00,  # mov eax, 40459B
+        0xFF, 0xD0,                    # call eax
+        0xEB, 0x02,                    # jump over 2 bytes
+        0x90, 0x90,
+        0xC1, 0xF8, 0x02               # sar eax,02
     ]
     apply_aob_as_patch(0x59370, bribe_jumpout_instructions)
 
-    custom_bribe_instructions = [
-        0x8A, 0x80, 0xBB, 0x45, 0x40, 0x00,  # mov al,[eax+Stronghold_Crusader_Extreme.exe+45BB]
-        0x0F, 0xAF, 0x44, 0x24, 0x0C,        # imul eax,[esp+0C]
-        0xE9, 0xC0, 0x4D, 0x05, 0x00         # jmp Stronghold_Crusader_Extreme.exe+5937C
+    custom_tax_instructions = [
+        0x88, 0x44, 0x24, 0x0C,                          # mov eax [esp+0C]
+        0x66, 0x8B, 0x04, 0x45, 0xAD, 0x45, 0x40, 0x00,  # mov ax,[eax*2+Stronghold_Crusader_Extreme.exe+45AD]
+        0x0F, 0xAF, 0x44, 0x24, 0x10,                    # imul eax,[esp+10]
+        0xC3                                             # return
     ]
-    apply_aob_as_patch(0x45AB, custom_bribe_instructions)
+    apply_aob_as_patch(0x459B, custom_tax_instructions)
 
-    apply_aob_as_patch(0x45BB, [int(float(a)*20) for a in tax_table if a != "0.00"])
+    apply_aob_as_patch(0x45AD, [(int(float(a)*20), 2) for a in tax_table])
+
+    neutral_level = tax_table.index("0.00")
+    write_with_uninst_info(shc, 0x3B09F, neutral_level, 1)
+    write_with_uninst_info(shc, 0x593A8, neutral_level, 1)
+    write_with_uninst_info(shc, 0x593E8, neutral_level, 1)
+    write_with_uninst_info(shc, 0x3ADCE, neutral_level, 1)
+    write_with_uninst_info(shc, 0x3EBC4, neutral_level, 1)
+    write_with_uninst_info(shc, 0x5BC5D, neutral_level, 1)
+    write_with_uninst_info(shc, 0x5C1AF, neutral_level, 1)
+    write_with_uninst_info(shc, 0x560C2, neutral_level, 4)
+    jump_addr_list = [0x3B0AE, 0x3B0BD, 0x3B0C9, 0x3B0D5, 0x3B0E1, 0x3B0ED,
+                      0x3B0F9, 0x3B105, 0x3B111, 0x3B11D, 0x3B129, 0x3B133]
+    jump_distance = jump_addr_list[neutral_level] - 0x3b0A8 - 2
+    neutral_happiness = read(shc, jump_addr_list[neutral_level], 4)
+    write_with_uninst_info(shc, 0x3EBCF, neutral_happiness, 4)
+    write_with_uninst_info(shc, 0x5BC65, neutral_happiness, 4)
+    write_with_uninst_info(shc, 0x3b0A8, jump_distance, 1)
 
 
 def enable_custom_combat_bonus(damage_table):
     combat_jumpout_instructions = [
-        0x31, 0xC9,                    # xor ecx, ecx
-        0xE9, 0xA1, 0x2F, 0xED, 0xFF,  # jmp 4045C8 (45C8)
-        0x90, 0x90, 0x90, 0x90         # nop nop nop nop
+        0xB9, 0xC6, 0x45, 0x40, 0x00,  # mov ecx 4045C6
+        0xFF, 0xD1,                    # call ecx
+        0xEB, 0x02, 0x90, 0x90         # jump over 2 nop nop
     ]
     apply_aob_as_patch(0x131620, combat_jumpout_instructions)
 
     custom_combat_instructions = [
+        0x31, 0xC9,                          # xor ecx, ecx
         0x8A, 0x88, 0xDD, 0x45, 0x40, 0x00,  # mov cl,[eax+004045DD]
-        0x0F, 0xAF, 0x4C, 0x24, 0x04,        # imul ecx,[esp+04]
-        0xE9, 0x53, 0xD0, 0x12, 0x00         # jmp 0053162B
+        0x0F, 0xAF, 0x4C, 0x24, 0x08,        # imul ecx,[esp+08]
+        0xC3                                 # return
     ]
     apply_aob_as_patch(0x45C8, custom_combat_instructions)
 
