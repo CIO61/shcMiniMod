@@ -542,13 +542,13 @@ def enable_custom_combat_bonus(damage_table):
 
     custom_combat_instructions = [
         0x31, 0xC9,                          # xor ecx, ecx
-        0x8A, 0x88, 0xDD, 0x45, 0x40, 0x00,  # mov cl,[eax+004045DD]
+        0x8A, 0x88, 0xD9, 0x45, 0x40, 0x00,  # mov cl,[eax+004045D9]
         0x0F, 0xAF, 0x4C, 0x24, 0x08,        # imul ecx,[esp+08]
         0xC3                                 # return
     ]
-    apply_aob_as_patch(0x45C8, custom_combat_instructions)
+    apply_aob_as_patch(0x45C6, custom_combat_instructions)
 
-    apply_aob_as_patch(0x45D8, damage_table)
+    apply_aob_as_patch(0x45D4, damage_table)
 
 
 def uninstall_custom_combat_bonus():
