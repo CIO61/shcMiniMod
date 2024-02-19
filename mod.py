@@ -22,15 +22,16 @@ def write_with_uninst_info(shc, address, value, size):
 
 def apply_aob_as_patch(address, array):
     with open(exe_path, "r+b") as shc:
-        shc.seek(0)
-        shc.seek(address)
+        offset = address
         for elem in array:
             if type(elem) == tuple:
                 value = elem[0]
                 size = elem[1]
-                shc.write(int(value).to_bytes(size, byteorder='little'))
             else:
-                shc.write(int(str(elem)).to_bytes(1, byteorder='little'))
+                value = elem
+                size = 1
+            write_with_uninst_info(shc, offset, value, size)
+            offset += size
 
 
 def modify_building_stats(buildings):
@@ -367,21 +368,6 @@ def install_tax_reset_feature(reset_value):
     apply_aob_as_patch(0x7BE050, [0x90]*0xFB0)
 
 
-def uninstall_tax_reset_feature():
-    # Reset image size to original ucp section size
-    with open(exe_path, "r+b") as shc:
-        write(shc, 0x168, 0x2F8E000, 4)
-        write(shc, 0x2B9, 0x50, 1)
-        write(shc, 0x2C1, 0x50, 1)
-
-    # Undo tax reset change
-    original_tax_reset_instructions = [0x89, 0x84, 0x3E, 0xB4, 0x38, 0x0C, 0x00]
-    apply_aob_as_patch(0x5BB27, original_tax_reset_instructions)
-
-    original_tax_gold_instructions = [0x8B, 0x06, 0x83, 0xF8, 0x03]
-    apply_aob_as_patch(0x5C1AB, original_tax_gold_instructions)
-
-
 def modify_taxation_rules(taxation_rules):
     with open(exe_path, "r+b") as shc:
         for key in taxation_rules:
@@ -551,29 +537,6 @@ def enable_custom_combat_bonus(damage_table):
     apply_aob_as_patch(0x45D4, damage_table)
 
 
-def uninstall_custom_combat_bonus():
-    original_combat_bonus_instructions = [
-        0x83, 0xC0, 0x14,
-        0x0F, 0xAF, 0x44, 0x24, 0x04,
-        0x8D, 0x0C, 0x80
-    ]
-    apply_aob_as_patch(0x531620, original_combat_bonus_instructions)
-
-    codecave_cleanup = [0x03] * 27
-    apply_aob_as_patch(0x4045C8, codecave_cleanup)
-
-
-def uninstall_custom_taxation():
-    original_tax_instructions = [0x0F, 0xAF, 0x44, 0x24, 0x0C, 0x99, 0x2B, 0xC2, 0xD1, 0xF8]
-    apply_aob_as_patch(0x592B7, original_tax_instructions)
-
-    original_bribe_instructions = [0xB8, 0x05, 0x00, 0x00, 0x00, 0x2B, 0x44, 0x24, 0x08, 0x0F, 0xAF, 0x44, 0x24, 0x0C]
-    apply_aob_as_patch(0x59370, original_bribe_instructions)
-
-    codecave_cleanup = [0x03] * 43  # original content in the code cave
-    apply_aob_as_patch(0x459B, codecave_cleanup)
-
-
 def install_mod():
     if os.path.exists(configpath):
         with open(configpath, "r") as f:
@@ -660,19 +623,8 @@ def uninstall_mod():
                 for key in uninstall[size]:
                     try:
                         write(shc, int(key), uninstall[size][key], int(size))
-                    except:
-                        if "tax_reset" in uninstall[size]:
-                            uninstall_tax_reset_feature()
-                        if "assassin_rally_speed" in uninstall[size]:
-                            assassin_rally_aob = [0x66, 0x8B, 0x96, 0x88, 0xD3, 0x45, 0x01]
-                            shc.seek(0)
-                            shc.seek(0x174A60)
-                            for elem in assassin_rally_aob:
-                                shc.write(elem.to_bytes(1, byteorder='little'))
-                        if "custom_taxation" in uninstall[size]:
-                            uninstall_custom_taxation()
-                        if "custom_combat_bonus" in uninstall[size]:
-                            uninstall_custom_combat_bonus()
+                    except Exception as e:
+                        errors.append(f"{e.args[0]}: {e.args[1]}")
 
 
 if __name__ == "__main__":
