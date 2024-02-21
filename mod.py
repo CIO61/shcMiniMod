@@ -467,8 +467,9 @@ def modify_fear_factor_rules(fear_factor_rules):
 def enable_custom_taxation(shc, tax_table):
     tax_jumpout_instructions = [
         0xE8, 0xE6, 0xB2, 0xFA, 0xFF,             # call 40459B
-        0xEB, 0x07,                               # jump over 7 bytes
-        0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+        0xE8, 0x3F, 0xB3, 0xFA, 0xFF,             # call 4045F9
+        0xEB, 0x02,                               # jump over 2 bytes
+        0x90, 0x90,
         0xC1, 0xF8, 0x03,                         # sar eax,03
         0x83, 0x3D, 0xF0, 0x4D, 0x35, 0x02, 0x00  # cmp dword ptr [Stronghold_Crusader_Extreme.exe+1F54DF0],00
     ]
@@ -476,8 +477,8 @@ def enable_custom_taxation(shc, tax_table):
 
     bribe_jumpout_instructions = [
         0xE8, 0x26, 0xB2, 0xFA, 0xFF,  # call 40459B
-        0xEB, 0x04,                    # jump over 4 bytes
-        0x90, 0x90, 0x90, 0x90,
+        0xE8, 0x7F, 0xB2, 0xFA, 0xFF,  # call 4045F9
+        0x90,
         0xC1, 0xF8, 0x02               # sar eax,02
     ]
     apply_aob_as_patch(0x59370, bribe_jumpout_instructions)
@@ -490,7 +491,23 @@ def enable_custom_taxation(shc, tax_table):
     ]
     apply_aob_as_patch(0x459B, custom_tax_instructions)
 
-    apply_aob_as_patch(0x45AD, [(int(float(a)*20), 2) for a in tax_table])
+    apply_aob_as_patch(0x45AD, [(int(float(a)*100), 2) for a in tax_table])
+
+    apply_aob_as_patch(0x45F9, [
+        0x52,
+        0x51,
+        0x8B, 0xC8,
+        0xBA, 0x67, 0x66, 0x66, 0x66,
+        0xF7, 0xEA,
+        0xD1, 0xFA,
+        0x8B, 0xC1,
+        0xC1, 0xF8, 0x1F,
+        0x29, 0xC2,
+        0x8B, 0xC2,
+        0x59,
+        0x5A,
+        0xC3,
+    ])  # divby5, in asm
 
     neutral_level = tax_table.index("0.00")
     write_with_uninst_info(shc, 0x3B09F, neutral_level, 1)
