@@ -306,7 +306,7 @@ def modify_food_rules(food_rules):
 
                 write_with_uninst_info(shc, 0x5BBB9, variety_bonuses[0], 1)
                 write_with_uninst_info(shc, 0x5BBC3, variety_bonuses[1], 1)
-                write_with_uninst_info(shc, 0x5BB4D, variety_bonuses[2], 1)
+                write_with_uninst_info(shc, 0x5BBCD, variety_bonuses[2], 1)
 
 
 def install_tax_reset_feature(reset_value):
