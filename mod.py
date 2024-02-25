@@ -370,56 +370,101 @@ def install_tax_reset_feature(reset_value):
 
 def modify_taxation_rules(taxation_rules):
     with open(exe_path, "r+b") as shc:
-        for key in taxation_rules:
-            if key == "popularity":
-                popularity = taxation_rules[key]
-                write_with_uninst_info(shc, 0x3B0AE, popularity[0], 4)
-                write_with_uninst_info(shc, 0x3B0BD, popularity[1], 4)
-                write_with_uninst_info(shc, 0x3B0C9, popularity[2], 4)
-                write_with_uninst_info(shc, 0x3B0D5, popularity[3], 4)
-                write_with_uninst_info(shc, 0x3B0E1, popularity[4], 4)
-                write_with_uninst_info(shc, 0x3B0Ed, popularity[5], 4)
-                write_with_uninst_info(shc, 0x3B0F9, popularity[6], 4)
-                write_with_uninst_info(shc, 0x3B105, popularity[7], 4)
-                write_with_uninst_info(shc, 0x3B111, popularity[8], 4)
-                write_with_uninst_info(shc, 0x3B11D, popularity[9], 4)
-                write_with_uninst_info(shc, 0x3B129, popularity[10], 4)
-                write_with_uninst_info(shc, 0x3B133, popularity[11], 4)
+        if tax_table := taxation_rules.get("gold"):
+            tax_jumpout_instructions = [
+                0xE8, 0xE6, 0xB2, 0xFA, 0xFF,  # call 40459B
+                0xE8, 0x3F, 0xB3, 0xFA, 0xFF,  # call 4045F9
+                0xEB, 0x02,  # jump over 2 bytes
+                0x90, 0x90,
+                0xC1, 0xF8, 0x03,  # sar eax,03
+                0x83, 0x3D, 0xF0, 0x4D, 0x35, 0x02, 0x00
+                # cmp dword ptr [Stronghold_Crusader_Extreme.exe+1F54DF0],00
+            ]
+            apply_aob_as_patch(0x592B0, tax_jumpout_instructions)
 
-                write_with_uninst_info(shc, 0x3EBE3, popularity[0], 4)
-                write_with_uninst_info(shc, 0x3EBF0, max(-127, min(popularity[1]-1, 127)), 1)
-                write_with_uninst_info(shc, 0x3EBFA, max(-127, min(popularity[2]-2, 127)), 1)
-                write_with_uninst_info(shc, 0x3EC04, max(-127, min(popularity[3]-3, 127)), 1)
-                write_with_uninst_info(shc, 0x3EC0E, max(-127, min(popularity[4]-4, 127)), 1)
-                write_with_uninst_info(shc, 0x3EC18, max(-127, min(popularity[5]-5, 127)), 1)
-                write_with_uninst_info(shc, 0x3EC21, popularity[6], 4)
-                write_with_uninst_info(shc, 0x3EC2D, popularity[7], 4)
-                write_with_uninst_info(shc, 0x3EC39, popularity[8], 4)
-                write_with_uninst_info(shc, 0x3EC45, popularity[9], 4)
-                write_with_uninst_info(shc, 0x3EC56, popularity[10], 4)
-                write_with_uninst_info(shc, 0x3EC54, popularity[11]-popularity[10], 1)
+            bribe_jumpout_instructions = [
+                0xE8, 0x26, 0xB2, 0xFA, 0xFF,  # call 40459B
+                0xE8, 0x7F, 0xB2, 0xFA, 0xFF,  # call 4045F9
+                0x90,
+                0xC1, 0xF8, 0x02  # sar eax,02
+            ]
+            apply_aob_as_patch(0x59370, bribe_jumpout_instructions)
 
-                write_with_uninst_info(shc, 0x5BC73, popularity[0], 4)
-                write_with_uninst_info(shc, 0x5BC7F, popularity[1], 4)
-                write_with_uninst_info(shc, 0x5BC8B, popularity[2], 4)
-                write_with_uninst_info(shc, 0x5BC97, popularity[3], 4)
-                write_with_uninst_info(shc, 0x5BCA3, popularity[4], 4)
-                write_with_uninst_info(shc, 0x5BCAF, popularity[5], 4)
-                write_with_uninst_info(shc, 0x5BCBB, popularity[6], 4)
-                write_with_uninst_info(shc, 0x5BCC7, popularity[7], 4)
-                write_with_uninst_info(shc, 0x5BCD3, popularity[8], 4)
-                write_with_uninst_info(shc, 0x5BCDF, popularity[9], 4)
-                write_with_uninst_info(shc, 0x5BCF0, popularity[10], 4)
-                write_with_uninst_info(shc, 0x5BCEE, popularity[11]-popularity[10], 1)
-            elif key == "gold":
-                tax_table = taxation_rules[key]
-                enable_custom_taxation(shc, tax_table)
-            elif key == "advantage_multiplier":
-                advantage_multipliers = taxation_rules[key]
-                human_big_ai_medium = advantage_multipliers["human_big_ai_medium"]
-                ai_big = advantage_multipliers["ai_big"]
-                write_with_uninst_info(shc, 0x59326, human_big_ai_medium, 4)
-                write_with_uninst_info(shc, 0x592FA, ai_big, 4)
+            custom_tax_instructions = [
+                0x8A, 0x44, 0x24, 0x0C,                          # mov eax [esp+0C]
+                0x66, 0x8B, 0x04, 0x45, 0xAD, 0x45, 0x40, 0x00,  # mov ax,[eax*2+Stronghold_Crusader_Extreme.exe+45AD]
+                0x0F, 0xAF, 0x44, 0x24, 0x10,                    # imul eax,[esp+10]
+                0xC3                                             # return
+            ]
+            apply_aob_as_patch(0x459B, custom_tax_instructions)
+
+            apply_aob_as_patch(0x45AD, [(int(float(a) * 100), 2) for a in tax_table])
+
+            apply_aob_as_patch(0x45F9, [
+                0x52,
+                0x51,
+                0x8B, 0xC8,
+                0xBA, 0x67, 0x66, 0x66, 0x66,
+                0xF7, 0xEA,
+                0xD1, 0xFA,
+                0x8B, 0xC1,
+                0xC1, 0xF8, 0x1F,
+                0x29, 0xC2,
+                0x8B, 0xC2,
+                0x59,
+                0x5A,
+                0xC3,
+            ])
+            neutral_level = tax_table.index("0.00")
+        else:
+            neutral_level = 3
+
+        if popularity := taxation_rules.get("popularity"):
+            apply_aob_as_patch(0x3B09D, [
+                0x83, 0xF8, neutral_level,
+                0x7D, 0x09,                          # jnl 0043B0AB
+                0x83, 0x7C, 0x24, 0x10, 0x00,        # cmp dword ptr [esp+10],00 { 0 }
+                0x7F, 0x02,                          # jle 0043B0AB
+                0xB0, neutral_level,                 # mov al,03 { 3 }
+                0xC1, 0xE0, 0x02,                    # shl eax,02 { 2 }
+                0x8B, 0x80, 0xBC, 0xB0, 0x43, 0x00,  # mov eax,[eax+0043B0BC]
+                0xE9, 0x84, 0x00, 0x00, 0x00,        # jmp 0043B13D
+                0x90,                                # nop
+                0x90,                                # nop
+                0x90                                 # nop
+            ] + [(x, 4) for x in popularity] + [0] * 75)
+            write_with_uninst_info(shc, 0x3EBC4, neutral_level, 1)
+            apply_aob_as_patch(0x3EBC4, [
+                neutral_level,
+                0x7D, 0x14,
+                0x83, 0x7C, 0x24, 0x18, 0x00,
+                0x7F, 0x0D,
+                0xB8, neutral_level, 0x00, 0x00, 0x00,  # mov eax,00000003
+                0xEB, 0x06,                             # jmp 0043EBDB
+                0x8B, 0x80, 0xC0, 0x0B, 0x1F, 0x01,     # mov eax,[eax+011F0BC0]
+                0xC1, 0xE0, 0x02,                       # shl eax,02
+                0x8B, 0xB0, 0xBC, 0xB0, 0x43, 0x00,     # mov esi,[eax+0043B0BC]
+                0xEB, 0x76                              # jmp 0043EC5C
+            ] + [0] * 118)
+
+            apply_aob_as_patch(0x5BC5D, [
+                neutral_level,
+                0x7D, 0x06,
+                0x85, 0xED,
+                0x7F, 0x02,
+                0xB0, neutral_level,
+                0xC1, 0xE0, 0x02,
+                0x8B, 0x80, 0xBC, 0xB0, 0x43, 0x00,
+                0xE9, 0x80, 0x00, 0x00, 0x00
+            ] + [0] * 128)
+        elif neutral_level != 3:
+            errors.append("You must include popularity table for your tax table with different neutral level!")
+
+        if advantage_multipliers := taxation_rules.get("advantage_multiplier"):
+            human_big_ai_medium = advantage_multipliers["human_big_ai_medium"]
+            ai_big = advantage_multipliers["ai_big"]
+            write_with_uninst_info(shc, 0x59326, human_big_ai_medium, 4)
+            write_with_uninst_info(shc, 0x592FA, ai_big, 4)
 
 
 def modify_fear_factor_rules(fear_factor_rules):
@@ -462,69 +507,6 @@ def modify_fear_factor_rules(fear_factor_rules):
             elif key == "combat_bonus":
                 damage_table = fear_factor_rules[key]
                 enable_custom_combat_bonus(damage_table)
-
-
-def enable_custom_taxation(shc, tax_table):
-    tax_jumpout_instructions = [
-        0xE8, 0xE6, 0xB2, 0xFA, 0xFF,             # call 40459B
-        0xE8, 0x3F, 0xB3, 0xFA, 0xFF,             # call 4045F9
-        0xEB, 0x02,                               # jump over 2 bytes
-        0x90, 0x90,
-        0xC1, 0xF8, 0x03,                         # sar eax,03
-        0x83, 0x3D, 0xF0, 0x4D, 0x35, 0x02, 0x00  # cmp dword ptr [Stronghold_Crusader_Extreme.exe+1F54DF0],00
-    ]
-    apply_aob_as_patch(0x592B0, tax_jumpout_instructions)
-
-    bribe_jumpout_instructions = [
-        0xE8, 0x26, 0xB2, 0xFA, 0xFF,  # call 40459B
-        0xE8, 0x7F, 0xB2, 0xFA, 0xFF,  # call 4045F9
-        0x90,
-        0xC1, 0xF8, 0x02               # sar eax,02
-    ]
-    apply_aob_as_patch(0x59370, bribe_jumpout_instructions)
-
-    custom_tax_instructions = [
-        0x8A, 0x44, 0x24, 0x0C,                          # mov eax [esp+0C]
-        0x66, 0x8B, 0x04, 0x45, 0xAD, 0x45, 0x40, 0x00,  # mov ax,[eax*2+Stronghold_Crusader_Extreme.exe+45AD]
-        0x0F, 0xAF, 0x44, 0x24, 0x10,                    # imul eax,[esp+10]
-        0xC3                                             # return
-    ]
-    apply_aob_as_patch(0x459B, custom_tax_instructions)
-
-    apply_aob_as_patch(0x45AD, [(int(float(a)*100), 2) for a in tax_table])
-
-    apply_aob_as_patch(0x45F9, [
-        0x52,
-        0x51,
-        0x8B, 0xC8,
-        0xBA, 0x67, 0x66, 0x66, 0x66,
-        0xF7, 0xEA,
-        0xD1, 0xFA,
-        0x8B, 0xC1,
-        0xC1, 0xF8, 0x1F,
-        0x29, 0xC2,
-        0x8B, 0xC2,
-        0x59,
-        0x5A,
-        0xC3,
-    ])  # divby5, in asm
-
-    neutral_level = tax_table.index("0.00")
-    write_with_uninst_info(shc, 0x3B09F, neutral_level, 1)
-    write_with_uninst_info(shc, 0x593A8, neutral_level, 1)
-    write_with_uninst_info(shc, 0x593E8, neutral_level, 1)
-    write_with_uninst_info(shc, 0x3ADCE, neutral_level, 1)
-    write_with_uninst_info(shc, 0x3EBC4, neutral_level, 1)
-    write_with_uninst_info(shc, 0x5BC5D, neutral_level, 1)
-    write_with_uninst_info(shc, 0x5C1AF, neutral_level, 1)
-    write_with_uninst_info(shc, 0x560C2, neutral_level, 4)
-    jump_addr_list = [0x3B0AE, 0x3B0BD, 0x3B0C9, 0x3B0D5, 0x3B0E1, 0x3B0ED,
-                      0x3B0F9, 0x3B105, 0x3B111, 0x3B11D, 0x3B129, 0x3B133]
-    jump_distance = jump_addr_list[neutral_level] - 0x3b0A8 - 2
-    neutral_happiness = read(shc, jump_addr_list[neutral_level], 4)
-    write_with_uninst_info(shc, 0x3EBCF, neutral_happiness, 4)
-    write_with_uninst_info(shc, 0x5BC65, neutral_happiness, 4)
-    write_with_uninst_info(shc, 0x3b0A8, jump_distance, 1)
 
 
 def enable_custom_combat_bonus(damage_table):
