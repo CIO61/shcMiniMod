@@ -385,9 +385,6 @@
             "type": "integer"
           }
         },
-        "neutral_tax_level":{
-          "type": "integer"
-        },
         "gold": {
           "type": "array",
           "description": "List of taxation values. All taxation values must be a multiple of 0.05 in string format. Must contain one entry with exact value of \\\"0.00\\\", which determines the neutral tax level.",
