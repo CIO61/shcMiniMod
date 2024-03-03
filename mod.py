@@ -436,9 +436,9 @@ def modify_taxation_rules(taxation_rules):
             write_with_uninst_info(shc, 0x3EBC4, neutral_level, 1)
             apply_aob_as_patch(0x3EBC4, [
                 neutral_level,
-                0x7D, 0x14,
+                0x7D, 0x0E,
                 0x83, 0x7C, 0x24, 0x18, 0x00,
-                0x7F, 0x0D,
+                0x7F, 0x07,
                 0xB8, neutral_level, 0x00, 0x00, 0x00,  # mov eax,00000003
                 0xEB, 0x06,                             # jmp 0043EBDB
                 0x8B, 0x80, 0xC0, 0x0B, 0x1F, 0x01,     # mov eax,[eax+011F0BC0]
