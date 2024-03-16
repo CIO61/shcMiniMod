@@ -490,7 +490,10 @@
             "type": "integer"
           },
           "value": {
-            "type": "integer"
+            "type": ["integer", "string", "array"],
+            "items": {
+              "type": ["integer", "string"]
+            }
           }
         },
         "required": [
