@@ -418,9 +418,12 @@ def modify_taxation_rules(taxation_rules):
             neutral_level = tax_table.index("0.00")
         else:
             neutral_level = 3
-
+        write_with_uninst_info(shc, 0x5C1AF, neutral_level, 1)
+        write_with_uninst_info(shc, 0x560C2, neutral_level, 1)
+        write_with_uninst_info(shc, 0x593A8, neutral_level, 1)
+        write_with_uninst_info(shc, 0x593E8, neutral_level, 1)
         if popularity := taxation_rules.get("popularity"):
-            apply_aob_as_patch(0x3B09D, [
+            apply_aob_as_patch(0x3B09D, [  # keep menu
                 0x83, 0xF8, neutral_level,
                 0x7D, 0x09,                          # jnl 0043B0AB
                 0x83, 0x7C, 0x24, 0x10, 0x00,        # cmp dword ptr [esp+10],00 { 0 }
@@ -434,7 +437,7 @@ def modify_taxation_rules(taxation_rules):
                 0x90                                 # nop
             ] + [(x, 4) for x in popularity] + [0] * 75)
             write_with_uninst_info(shc, 0x3EBC4, neutral_level, 1)
-            apply_aob_as_patch(0x3EBC4, [
+            apply_aob_as_patch(0x3EBC4, [  # pop report
                 neutral_level,
                 0x7D, 0x0E,
                 0x83, 0x7C, 0x24, 0x18, 0x00,
@@ -447,7 +450,7 @@ def modify_taxation_rules(taxation_rules):
                 0xEB, 0x76                              # jmp 0043EC5C
             ] + [0] * 118)
 
-            apply_aob_as_patch(0x5BC5D, [
+            apply_aob_as_patch(0x5BC5D, [   # actual effect
                 neutral_level,
                 0x7D, 0x06,
                 0x85, 0xED,
